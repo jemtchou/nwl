@@ -32,8 +32,8 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 #----------------------------------------------------------------------------
 # Add the executable, and link it to the Geant4 libraries
 #
-add_executable(nwels.exe nwels.cc ${sources} ${headers})
-target_link_libraries(nwels.exe ${Geant4_LIBRARIES})
+add_executable(nwl.exe nwl.cc ${sources} ${headers})
+target_link_libraries(nwl.exe ${Geant4_LIBRARIES})
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
