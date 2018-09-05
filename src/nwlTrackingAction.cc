@@ -18,70 +18,56 @@
 #include <fstream>
 #include <map>
 
-G4int mPDG;
-G4double mEnergy;
-G4double mTime;
-G4int mDetId;
-G4int mHit;
-G4double mXmax;
-G4double mYmax;
-G4double mZmax;
-G4double mRmax;
-G4int mTrackId;
-G4int mProc;
-G4int mWeight;
-
 std::ofstream fout;
 
 nwlTrackingAction::nwlTrackingAction()
 {
-   fout.open("fout.csv");
-   fout << "pdgcode,energy,time,detId,hit,xmax,ymax,zmax,rmax,trackId,process,w" << std::endl;
-
 }
 
 void nwlTrackingAction::PreUserTrackingAction(const G4Track* track)
 {
   G4int pdg = track->GetDefinition()->GetPDGEncoding();
+  G4int na = 0;
+  G4int nz = 0;
+  G4String pname;
+  const G4VProcess* proc = track->GetCreatorProcess();
+
+  if(proc)
+  {
+        pname = proc->GetProcessName();
+	if(proc->GetProcessType()==fHadronic)
+	{
+		const G4Nucleus* nucleus = ((G4HadronicProcess*)proc)->GetTargetNucleus();
+		na = nucleus->GetA_asInt();
+  		nz = nucleus->GetZ_asInt();
+	}
+  }
+  else
+        pname = "Generator";
 
   G4int parentid = track->GetParentID();
-  G4VUserTrackInformation* info = new nwlParticleInfo;
-  G4Track *  theTrack( const_cast< G4Track * >( track ) );
+ 
+  nwlParticleInfo* info = new nwlParticleInfo;
+  info->SetOriginInfo(track->GetTrackID(), pdg, track->GetKineticEnergy(), track->GetGlobalTime(), track->GetPosition(), track->GetVolume(), pname, na, nz);
+
+  G4Track*  theTrack( const_cast< G4Track * >( track ) );
   theTrack->SetUserInformation(info);
 }
 
 void nwlTrackingAction::PostUserTrackingAction(const G4Track* track) {
     G4String volname = track->GetVolume()->GetName();
-
-    if(volname == "Detector1")
-    { 
-      mDetId = 1;
-    } 
-    else if (volname == "Detector2")
-    { 
-      mDetId = 2;
-    } 
-    else
-      return;
- 
-    mPDG = track->GetDefinition()->GetPDGEncoding();
-    mEnergy = track->GetTotalEnergy();
-//    G4ThreeVector pos = track->GetPosition();
-    mTime = track->GetGlobalTime();
-    mTrackId = track->GetTrackID();
-    mWeight = track->GetWeight();
-
-    G4String pname;
-    if(track->GetCreatorProcess())
-        pname = track->GetCreatorProcess()->GetProcessName();
-    else
-        pname = "Generator";
-    mProc = nwlRunAction::Instance()->process[pname];
+    G4bool stopInDet = false;
+    G4int detId;  
+     // Search the detector map
+    
 
     nwlParticleInfo* info = (nwlParticleInfo*)(track->GetUserInformation());
+ 
+    G4VProcess* proc =  G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager()->GetfCurrentProcess();
 
-    mHit = 0;
-    G4TrackVector* secondaries = G4EventManager::GetEventManager()->GetTrackingManager()->GimmeSecondaries();
+    info->SetFinalInfo(stopInDet, detId, proc->GetProcessName());
+
+    /*G4TrackVector* secondaries = G4EventManager::GetEventManager()->GetTrackingManager()->GimmeSecondaries();
     G4TrackVector::iterator it;
     for(it = secondaries->begin(); it!= secondaries->end(); it++)
     {
@@ -92,7 +78,7 @@ void nwlTrackingAction::PostUserTrackingAction(const G4Track* track) {
 	 }
 
     }
-    
-   fout << mPDG<<","<<mEnergy<<","<<mTime<<","<<mDetId<<","<<mHit<<","<<mTrackId<<","<<mProc<<","<<mWeight<<std::endl;
-   fout.flush();
+    */
+   
+   info->Print(); 
 }

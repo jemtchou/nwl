@@ -122,7 +122,7 @@ G4VPhysicalVolume* nwlGeoModel::Construct()
   }
 
   map<G4String, G4Material*>::iterator it;
-  for(it=mat.begin(); it!=mat.end(); it++)
+  for(it=mat.begin(); it!=mat.end(); ++it)
   {
      std::cout << (*it).first << " " << (*(*it).second) << std::endl; 
   }
@@ -224,7 +224,7 @@ void nwlGeoModel::ConfigureImportanceSampling()
       cout << pWorld->GetName() << endl;
       istore->AddImportanceGeometryCell(1, *pWorld);
       map<G4String, G4double>::iterator wt;
-      for (wt = weight.begin(); wt != weight.end(); wt++)
+      for (wt = weight.begin(); wt != weight.end(); ++wt)
       {	    
 	 if(vol[(*wt).first]==pWorld) continue;
          cout << "Volume " << (*wt).first << " ---> " << (*wt).second << endl;

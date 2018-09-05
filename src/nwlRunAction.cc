@@ -30,7 +30,7 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
   int j = 1;
   G4ParticleTable* ptable = G4ParticleTable::GetParticleTable();
   int k =0;
-  for(k=0; k< ptable->entries(); k++)
+  for(k=0; k< ptable->entries(); ++k)
   {
     G4ParticleDefinition* particle = ptable->GetParticle(k);
     if(! particle) continue;
@@ -46,11 +46,11 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
   G4cout << "Process list" << G4endl;
   std::map<G4String,int>::iterator it;
   j=0;
-  for(it=process.begin(); it!=process.end(); it++)
+  for(it=process.begin(); it!=process.end(); ++it)
   {
      (*it).second=j++;
   }
-  for(it=process.begin(); it!=process.end(); it++)
+  for(it=process.begin(); it!=process.end(); ++it)
   {
      G4cout << (*it).first << " " << (*it).second << G4endl;
   }
