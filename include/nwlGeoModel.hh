@@ -4,10 +4,10 @@
 #include "globals.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VPhysicalVolume.hh"
+#include "G4LogicalVolume.hh"
 #include <map>
 
 class G4GeometrySampler;
-class G4LogicalVolume;
 class G4Element;
 class G4Material;
 class G4IStore;
@@ -36,6 +36,7 @@ protected:
   bool doImportanceSampling;
 
   std::map<G4String, G4VPhysicalVolume*> vol;
+  std::map<G4String, G4LogicalVolume*> logvol;
   std::map<G4String, G4double> weight;
 };
 

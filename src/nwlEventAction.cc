@@ -5,14 +5,9 @@
 #include "nwlParticleSource.hh"
 #include <time.h>
 
-//#include "RootWriter.hh"
-
 #include "G4RunManager.hh"
 #include "G4Event.hh"
 #include "G4Run.hh"
-
-//#include "TH1F.h"
-//#include "TTree.h"
 
 nwlEventAction* nwlEventAction::fgInstance = 0;
 
@@ -53,12 +48,29 @@ void nwlEventAction::BeginOfEventAction(const G4Event* event)
      } 
 }
 
+void nwlEventAction::StoreParticleInfo(nwlParticleInfo& pinfo)
+{
+    particles.push_back(pinfo);
+}
+
 void nwlEventAction::EndOfEventAction(const G4Event* /*event*/)
 {
+  nwlRunAction* ra = nwlRunAction::Instance();
+
+  // Store particle info to file and histo
+  nwlParticleInfoVector::iterator it;
+  for (it=particles.begin(); it!=particles.end(); ++it)
+  {
+     // one may put some selection logic here
+     (*it).Write(ra->GetStream());
+  }
+  //
+
   Reset();
 
 } 
 
 void nwlEventAction::Reset()
 {
+  particles.clear();
 }

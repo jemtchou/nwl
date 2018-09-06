@@ -1054,7 +1054,7 @@ bool nwlConfigParser::GetDetector(vector<string>& Detectors){
 }
 
 //=========================================================================================================== GetOutput
-bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& H2Ds, bool WriteNtuple){
+bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& H2Ds, bool& WriteNtuple){
   ifstream is = OpenFile();
 
   string CurStr;

@@ -1,5 +1,8 @@
 #include "nwlParticleInfo.hh"
 #include "G4VPhysicalVolume.hh"
+#include "globals.hh"
+
+using namespace CLHEP;
 
 nwlParticleInfo::nwlParticleInfo()
 {
@@ -10,11 +13,11 @@ nwlParticleInfo::nwlParticleInfo()
         creatorProcess = "";
         originNucleusA = 0;
         originNucleusZ = 0;
-        detectorId = -1;
+        detectorId = "";
         detectorTime = 0;
         detectorKineticEnergy = 0;
         stopInTheDetector = false;
-        stopInDetectorID = -1;
+        stopInDetectorID = "";
         reactionInTheDetector = "";
         weight = 0;
 }
@@ -43,6 +46,33 @@ void nwlParticleInfo::Print() const
 	 << "Weight       " << weight << G4endl;
 }
 
+void nwlParticleInfo::Write(std::ostream& outs)
+{
+   outs << std::scientific
+	<< pdg  << ", "
+        << originPoint.x()/mm << ", "
+	<< originPoint.y()/mm << ", "
+	<< originPoint.z()/mm << ", "
+	<< originTime/ns << ", "
+        << originKineticEnergy/MeV << ", "
+        << originVolume->GetName() << ", " 
+        << creatorProcess << ", "
+        << originNucleusA << ", "
+	<< originNucleusZ << ", "
+	<< detectorId << ", "
+	<< detectorTime/ns << ", "
+	<< detectorKineticEnergy/MeV  << ", "
+        << entrancePoint.x()/mm << ", "
+        << entrancePoint.y()/mm << ", "
+        << entrancePoint.z()/mm << ", "
+        << entranceDirection.x() << ", "
+        << entranceDirection.y() << ", "
+        << entranceDirection.z() << ", "
+        << stopInDetectorID   << ", "
+        << reactionInTheDetector  << ", "
+	<< weight << std::endl;
+}
+
 void nwlParticleInfo::SetOriginInfo(G4int TrackID, G4int Pdg, G4double Kine, G4double Time, G4ThreeVector OriginPoint, G4VPhysicalVolume* vol, G4String CreatorProcess, G4int nA, G4int nZ)
 {
 	trackID = TrackID;
@@ -56,7 +86,7 @@ void nwlParticleInfo::SetOriginInfo(G4int TrackID, G4int Pdg, G4double Kine, G4d
 	originNucleusZ = nZ;
 }
 
-void nwlParticleInfo::SetDetectorInfo(G4int DetId, G4double Time, G4double Kine, G4ThreeVector EntrancePoint, G4ThreeVector EntranceDir, G4double W)
+void nwlParticleInfo::SetDetectorInfo(G4String DetId, G4double Time, G4double Kine, G4ThreeVector EntrancePoint, G4ThreeVector EntranceDir, G4double W)
 {
   detectorId = DetId;
   detectorTime = Time;
@@ -66,7 +96,7 @@ void nwlParticleInfo::SetDetectorInfo(G4int DetId, G4double Time, G4double Kine,
   weight = W;
 }
 
-void nwlParticleInfo::SetFinalInfo(G4bool StopInDet, G4int detId, G4String DetProcess)
+void nwlParticleInfo::SetFinalInfo(G4bool StopInDet, G4String detId, G4String DetProcess)
 {
    stopInTheDetector = StopInDet;
    stopInDetectorID = detId;

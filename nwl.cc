@@ -30,15 +30,19 @@ int main(int argc,char** argv)
       return 0;
     }
 
+  long jobId = 0;
+  if ( argc == 3)
+     jobId = atol(argv[2]); 
+
   // Choose the Random engine
-  G4Random::setTheEngine(new CLHEP::MTwistEngine);
+  G4Random::setTheEngine(new CLHEP::RanecuEngine);
   
   G4RunManager* runManager = new G4RunManager;
 
   nwlConfigParser* cfg = nwlConfigParser::Instance();
   cfg->SetFilename(std::string(argv[1]));
 
-  std::cout << std::string(argv[1]) << std::endl;
+  std::cout << "Reading config file " << std::string(argv[1]) << std::endl;
 
   // Geometry description
   nwlGeoModel* geo = new nwlGeoModel();
@@ -55,7 +59,10 @@ int main(int argc,char** argv)
 
   // User action initialization
   runManager->SetUserAction(new nwlParticleSource());
-  runManager->SetUserAction(new nwlRunAction());  
+
+  nwlRunAction* ra = new nwlRunAction();
+  ra->SetJobID(jobId);
+  runManager->SetUserAction(ra);  
   runManager->SetUserAction(new nwlEventAction());  
   runManager->SetUserAction(new nwlTrackingAction());
   runManager->SetUserAction(new nwlSteppingAction());
@@ -67,6 +74,12 @@ int main(int argc,char** argv)
       geo->ConfigureImportanceSampling();
 
   physicsList->DumpCutValuesTable();
+
+  long rand[2];
+  rand[0] = long(jobId*100000000 + 123456789);
+  rand[1] = 123456789;
+  const long* rand1 = rand;
+  G4Random::setTheSeeds(rand1);
 
   if(argc==2) // Interactive
   {

@@ -30,7 +30,7 @@ public:
 
  bool GetDetector(std::vector<std::string>& Detectors);
 
- bool GetOutput(std::vector<nwlH1Record>& H1Ds, std::vector<nwlH2Record>& H2Ds, bool WriteNtuple);
+ bool GetOutput(std::vector<nwlH1Record>& H1Ds, std::vector<nwlH2Record>& H2Ds, bool& WriteNtuple);
 
 private:
  nwlConfigParser();

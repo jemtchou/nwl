@@ -18,8 +18,6 @@
 #include <fstream>
 #include <map>
 
-std::ofstream fout;
-
 nwlTrackingAction::nwlTrackingAction()
 {
 }
@@ -57,9 +55,12 @@ void nwlTrackingAction::PreUserTrackingAction(const G4Track* track)
 void nwlTrackingAction::PostUserTrackingAction(const G4Track* track) {
     G4String volname = track->GetVolume()->GetName();
     G4bool stopInDet = false;
-    G4int detId;  
-     // Search the detector map
-    
+    G4String detId = "";
+    if ( nwlRunAction::Instance()->IsSensitive(volname) )
+    {
+	detId = volname;
+        stopInDet = true;
+    }
 
     nwlParticleInfo* info = (nwlParticleInfo*)(track->GetUserInformation());
  
@@ -80,5 +81,8 @@ void nwlTrackingAction::PostUserTrackingAction(const G4Track* track) {
     }
     */
    
-   info->Print(); 
+   //info->Print();
+
+   if(info->GetDetectorID() != "" || stopInDet) // if particle crossed or interacted in the detector
+       nwlEventAction::Instance()->StoreParticleInfo(*info); 
 }

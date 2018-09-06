@@ -15,7 +15,7 @@
 #include "G4GeometrySampler.hh"
 #include "G4IStore.hh"
 #include "G4ImportanceAlgorithm.hh"
-
+#include "nwlSD.hh"
 #include "nwlConfigParser.hh"
 
 using namespace std;
@@ -173,6 +173,7 @@ G4VPhysicalVolume* nwlGeoModel::Construct()
       }
 
       G4LogicalVolume* lv = new G4LogicalVolume( sv, tmpmat, vrecord.Name, 0, 0, 0);
+      logvol[vrecord.Name] = lv;
 
       G4VPhysicalVolume* motherv = 0;
       if (vrecord.exVolume != "") //not a world volume
@@ -211,7 +212,23 @@ G4VPhysicalVolume* nwlGeoModel::Construct()
   }
 
 // --- Sensitive detectors ---
+  G4SDManager* SDman = G4SDManager::GetSDMpointer();
+  vector<string> sds;
+  if( cfg->GetDetector(sds) )
+  {	
+    for(vector<string>::iterator jt = sds.begin(); jt != sds.end(); ++jt)
+    {
+	if(logvol[(*jt)] != 0)
+	{
+	    G4VSensitiveDetector* sd = new nwlSD(*jt);
+	    logvol[(*jt)]->SetSensitiveDetector(sd);
+	    SDman->AddNewDetector(sd);
+	}
+	else
+	    G4Exception("nwlGeoModel", "ConfigFile", FatalException, ("Sensitive Volume "+(*jt)+" not defined in GeoModel.").c_str());
 
+    }
+  }
 
   return pWorld;
 }
