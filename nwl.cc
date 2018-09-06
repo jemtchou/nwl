@@ -49,7 +49,7 @@ int main(int argc,char** argv)
   runManager->SetUserInitialization(geo);
 
   // Physics list
-  G4VModularPhysicsList* physicsList = new QBBC;//Earth;
+  G4VModularPhysicsList* physicsList = new Earth;
   physicsList->SetVerboseLevel(0);
   
   if( geo->DoImportanceSampling() )

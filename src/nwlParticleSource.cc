@@ -72,6 +72,27 @@ nwlParticleSource::nwlParticleSource() : G4VUserPrimaryGeneratorAction(), fParti
     else
       G4Exception("nwlParticleSource","Unknown particle",FatalException,("Particle "+particleName+" not found").c_str());
 
+     nwlSourceRecord srcrecord = cfg->GetSource();
+
+     fParticleGun->SetParticlePosition(G4ThreeVector(srcrecord.Position[0]*mm, srcrecord.Position[1]*mm, srcrecord.Position[2]*mm));
+     fParticleGun->SetParticleEnergy(srcrecord.Energy[0]*MeV);
+     fParticleGun->SetParticleMomentumDirection(G4ThreeVector(srcrecord.Pencil[0], srcrecord.Pencil[1], srcrecord.Pencil[2]));
+
+ /* os <<"\nSource.Type: ["<< Source.Type << "]"<<endl;
+  os <<"Source.Energy: ";
+  for(int i=0; i < Source.Energy.size(); i++){ os << Source.Energy[i] << ", ";  }
+  os <<"\nSource.Intensity: ";
+  for(int i=0; i < Source.Intensity.size(); i++){ os << Source.Intensity[i] << ", ";  }
+  os <<"\nSource.Direction: ["<< Source.Direction << "]"<<endl;
+  os <<"Source.Pencil: ";
+  for(int i=0; i < Source.Pencil.size(); i++){ os << Source.Pencil[i] << ", ";  }
+  os <<"\nSource.Particle: ["<< Source.Particle << "]"<<endl;
+  os <<"Source.Position: ";
+  for(int i=0; i < Source.Position.size(); i++){ os << Source.Position[i] << ", ";  }
+*/
+
+
+
     fgInstance = this;
 }
 
