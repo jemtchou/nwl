@@ -41,8 +41,6 @@ target_link_libraries(nwl.exe ${Geant4_LIBRARIES})
 # relies on these scripts being in the current working directory.
 #
 set(NWL_SCRIPTS
-  init_vis.mac
-  vis.mac
 )
 
 foreach(_script ${NWL_SCRIPTS})

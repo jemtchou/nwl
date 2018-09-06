@@ -87,7 +87,7 @@ int main(int argc,char** argv)
     visManager->Initialize();
     G4UIExecutive* ui = new G4UIExecutive(argc, argv);
     G4UImanager* UImanager = G4UImanager::GetUIpointer();
-    UImanager->ApplyCommand("/control/execute init_vis.mac");
+    UImanager->ApplyCommand("/control/execute vis.mac");
     ui->SessionStart();
     delete ui;
     delete visManager;
