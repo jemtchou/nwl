@@ -42,7 +42,7 @@ Description of output
 * Send pull request
 
 # Credits
- Include a section for credits in order to highlight and link to the authors of your project.
+O.Bakina, V.Belokhin, A.Zhemchugov 
 
 # License
 NWL is released as open source software under the GPL v3 license, see the LICENSE file in the project root for the full license text.
