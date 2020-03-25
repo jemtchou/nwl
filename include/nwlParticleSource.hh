@@ -19,7 +19,7 @@ public:
   
   // method from the base class
   virtual void GeneratePrimaries(G4Event*);         
-  
+  /*
   // method to access particle gun
   const G4ParticleGun* GetParticleGun() const { return fParticleGun; }
   
@@ -27,12 +27,12 @@ public:
   double GetParticleEnergy() { return particleenergy; }
   void SetParticleCode( int code)  { particlecode=code;}
   void SetParticleEnergy( double energy)  {particleenergy = energy;} 
-    
+  */    
 private:
   static nwlParticleSource* fgInstance;
   int particlecode;
   double particleenergy;
-  G4ParticleGun*  fParticleGun; // pointer a to G4 gun class
+  G4VPrimaryGenerator*  fParticleGun; // pointer a to G4 gun class
   G4String type;
   int geom;
 };

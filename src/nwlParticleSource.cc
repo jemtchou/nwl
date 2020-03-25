@@ -5,6 +5,7 @@
 #include "G4Box.hh"
 #include "G4RunManager.hh"
 #include "G4ParticleGun.hh"
+#include "G4GeneralParticleSource.hh"
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
@@ -49,8 +50,8 @@ nwlParticleSource* nwlParticleSource::Instance()
 
 nwlParticleSource::nwlParticleSource() : G4VUserPrimaryGeneratorAction(), fParticleGun(0)
 {
-    fParticleGun  = new G4ParticleGun(1);
-
+    fParticleGun  = new G4GeneralParticleSource();
+/*
     nwlConfigParser* cfg = nwlConfigParser::Instance();
 
     G4String particleName = "";
@@ -77,7 +78,7 @@ nwlParticleSource::nwlParticleSource() : G4VUserPrimaryGeneratorAction(), fParti
      fParticleGun->SetParticlePosition(G4ThreeVector(srcrecord.Position[0]*mm, srcrecord.Position[1]*mm, srcrecord.Position[2]*mm));
      fParticleGun->SetParticleEnergy(srcrecord.Energy[0]*MeV);
      fParticleGun->SetParticleMomentumDirection(G4ThreeVector(srcrecord.Pencil[0], srcrecord.Pencil[1], srcrecord.Pencil[2]));
-
+*/
  /* os <<"\nSource.Type: ["<< Source.Type << "]"<<endl;
   os <<"Source.Energy: ";
   for(int i=0; i < Source.Energy.size(); i++){ os << Source.Energy[i] << ", ";  }
@@ -90,8 +91,6 @@ nwlParticleSource::nwlParticleSource() : G4VUserPrimaryGeneratorAction(), fParti
   os <<"Source.Position: ";
   for(int i=0; i < Source.Position.size(); i++){ os << Source.Position[i] << ", ";  }
 */
-
-
 
     fgInstance = this;
 }
