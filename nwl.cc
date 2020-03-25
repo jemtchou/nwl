@@ -4,20 +4,15 @@
 #include "nwlEventAction.hh"
 #include "nwlTrackingAction.hh"
 #include "nwlRunAction.hh"
+#include "nwlPhysicsList.hh"
 
 #include "G4ImportanceBiasing.hh"
 #include "G4RunManager.hh"
 #include "G4UImanager.hh"
-#include "Earth.hh"
-#include "QBBC.hh"
+#include "G4VisManager.hh"
 
-#ifdef G4VIS_USE
 #include "G4VisExecutive.hh"
-#endif
-
-#ifdef G4UI_USE
 #include "G4UIExecutive.hh"
-#endif
 
 #include "Randomize.hh"
 #include "nwlConfigParser.hh"
@@ -49,7 +44,7 @@ int main(int argc,char** argv)
   runManager->SetUserInitialization(geo);
 
   // Physics list
-  G4VModularPhysicsList* physicsList = new Earth;
+  G4VModularPhysicsList* physicsList = new nwlPhysicsList;
   physicsList->SetVerboseLevel(0);
   
   if( geo->DoImportanceSampling() )
