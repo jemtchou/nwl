@@ -3,6 +3,7 @@
 
 #include "G4VUserTrackInformation.hh"
 #include "G4ThreeVector.hh"
+#include "G4VPhysicalVolume.hh"
 
 #include <vector>
 #include <ostream>
@@ -23,8 +24,25 @@ class  nwlParticleInfo : public G4VUserTrackInformation
 
 	void SetFinalInfo(G4bool StopInDet, G4String detId, G4String ctorDetProcess);
 
-        G4String GetDetectorID() {return detectorId;};
-  
+	G4int GetTrackID() {return trackID;}
+	G4int GetPDG() {return pdg;}
+	G4ThreeVector& GetOriginPoint() {return originPoint;}
+	G4double GetOriginTime() {return originTime;}
+	G4double GetOriginKineticEnergy() {return originKineticEnergy;}
+	G4String GetOriginVolumeName() {return originVolume->GetName();}
+	G4String GetCreatorProcess() {return creatorProcess;}
+	G4int GetOriginNucleusA() {return originNucleusA;}
+	G4int GetOriginNucleusZ() {return originNucleusZ;}
+	G4String GetDetectorID() {return detectorId;}
+	G4ThreeVector& GetEntrancePoint() {return entrancePoint;}
+	G4ThreeVector& GetEntranceDirection() {return entranceDirection;}
+	G4double GetDetectorTime() {return detectorTime;}
+	G4double GetDetectorKineticEnergy() {return detectorKineticEnergy;}
+	G4bool GetStopInTheDetector() {return stopInTheDetector;}
+	G4String GetStopInDetectorID() {return stopInDetectorID;}
+	G4String GetReactionInTheDetector() {return reactionInTheDetector;}
+	G4double GetWeight() {return weight;}
+
         void Write(std::ostream& outs); 
 
     private:

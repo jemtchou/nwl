@@ -8,6 +8,7 @@
 #include "G4SystemOfUnits.hh"
 #include "G4UImanager.hh"
 
+#include "nwlAnalysis.hh"
 #include "nwlEventAction.hh"
 
 using namespace std;
@@ -23,6 +24,60 @@ nwlRunAction* nwlRunAction::Instance()
 nwlRunAction::nwlRunAction() : G4UserRunAction()
 {
   fgInstance = this;
+
+  auto analysisManager = G4AnalysisManager::Instance();
+  G4cout << "Using " << analysisManager->GetType() << G4endl;
+
+  // Create directories
+  //analysisManager->SetHistoDirectoryName("histograms");
+  //analysisManager->SetNtupleDirectoryName("ntuple");
+  analysisManager->SetVerboseLevel(1);
+  //analysisManager->SetNtupleMerging(true);
+    // Note: merging ntuples is available only with Root output
+  
+  if(cfg->GetOutput(H1Ds, H2Ds, WriteNtuple))
+  {
+     // Book histograms, ntuple
+     //
+
+     // Creating histograms
+     analysisManager->CreateH1("Eabs","Edep in absorber", 100, 0., 800*MeV);
+     analysisManager->CreateH1("Egap","Edep in gap", 100, 0., 100*MeV);
+     analysisManager->CreateH1("Labs","trackL in absorber", 100, 0., 1*m);
+     analysisManager->CreateH1("Lgap","trackL in gap", 100, 0., 50*cm);
+
+     // Creating ntuple
+     if (WriteNtuple) 
+     {
+	analysisManager->CreateNtuple("NWL", "Well Logging Simu");
+	analysisManager->CreateNtupleIColumn("EventID");
+	analysisManager->CreateNtupleIColumn("TrackID");
+	analysisManager->CreateNtupleIColumn("PDG");
+	analysisManager->CreateNtupleDColumn("OriginX");
+	analysisManager->CreateNtupleDColumn("OriginY");
+	analysisManager->CreateNtupleDColumn("OriginZ");
+	analysisManager->CreateNtupleDColumn("Time");
+	analysisManager->CreateNtupleDColumn("OriginKine");
+	analysisManager->CreateNtupleSColumn("OriginVolume");
+	analysisManager->CreateNtupleSColumn("CreatorProcess");
+	analysisManager->CreateNtupleIColumn("NucleusA");
+	analysisManager->CreateNtupleIColumn("NucleusZ");
+	analysisManager->CreateNtupleSColumn("DetectorID");
+	analysisManager->CreateNtupleDColumn("EntranceX");
+	analysisManager->CreateNtupleDColumn("EntranceY");
+	analysisManager->CreateNtupleDColumn("EntranceZ");
+	analysisManager->CreateNtupleDColumn("EntranceDirX");
+	analysisManager->CreateNtupleDColumn("EntranceDirY");
+	analysisManager->CreateNtupleDColumn("EntranceDirZ");
+	analysisManager->CreateNtupleDColumn("DetectionTime");
+	analysisManager->CreateNtupleDColumn("DetectionKine");
+	analysisManager->CreateNtupleSColumn("StopInDetectorID");
+	analysisManager->CreateNtupleSColumn("ReactionInDetector");
+	analysisManager->CreateNtupleDColumn("Weight");
+
+	analysisManager->FinishNtuple();
+    }
+  }
 }
 
 nwlRunAction::~nwlRunAction()
@@ -54,7 +109,7 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
   if(logType == "NeutronNeutron")
          particleName = "neutron";
   else if (logType == "NeutronGamma")
-        particleName = "gamma";
+        particleName = "neutron";
   else if (logType == "GammaGamma")
         particleName = "gamma";
   else
@@ -76,6 +131,9 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
   vector<nwlH2Record> H2Ds;
   bool WriteNtuple;
 
+  auto analysisManager = G4AnalysisManager::Instance();
+  analysisManager->OpenFile("run_"+std::to_string(jobID)+".txt");
+/*
   if(cfg->GetOutput(H1Ds, H2Ds, WriteNtuple))
   {
 	if(WriteNtuple)
@@ -83,6 +141,7 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
 	    fout.open(("run_"+std::to_string(jobID)+".txt"));
 	}
   }
+*/
 
   // process table
   process["Generator"] = 0;
@@ -125,6 +184,13 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
 
 void nwlRunAction::EndOfRunAction(const G4Run* aRun)
 {
-   if (IsMaster()) {};
+   if (IsMaster()) 
+   {
+       auto analysisManager = G4AnalysisManager::Instance();
+       // save histograms & ntuple
+       analysisManager->Write();
+       analysisManager->CloseFile();
+   };
+
    fout.close();
 }
