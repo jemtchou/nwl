@@ -10,13 +10,27 @@ nwlConfigParser* nwlConfigParser::pInstance = 0;
 
 nwlConfigParser::nwlConfigParser()
 { 
-   fname="config"; 
-   oerr.open("parser.log");
+  fname="config"; 
+  oerr.open("parser.log");
+
+  m_EventNb = -1;
+  m_GenMacro = "";
+  m_LoggingType = "";
+  
+  b_EventNb = false;
+  b_GenMacro = false;
+  b_Materials = false;
+  b_Volumes = false;
+  b_Detectors = false;
+  b_WriteNtuple = false;
+  b_StoreAll = false;
+  b_H1 = false;
+  b_H2 = false;
 }
 
 nwlConfigParser::~nwlConfigParser()
 { 
-   oerr.close(); 
+  oerr.close(); 
 }
 
 nwlConfigParser* nwlConfigParser::Instance()
@@ -25,22 +39,45 @@ nwlConfigParser* nwlConfigParser::Instance()
   return pInstance;  
 }
 
+void nwlConfigParser::ReadConfig(std::string fn)
+{
+  fname = fn;
+  std::cout << "Reading config file " << fname << " ... " << std::flush;
+  ReadNumberOfEvents();
+  ReadLoggingType();
+  ReadGeneratorMacro();
+  ReadMaterials();
+  ReadGeometry();
+  ReadDetectors();
+  ReadOutput();
+  std::cout << "done" << std::endl;
+  std::cout <<  b_EventNb << " "
+	    << b_GenMacro << " "
+	    << b_Materials << " "
+	    << b_Volumes << " "
+	    << b_Detectors << " "
+	    << b_WriteNtuple << " "
+	    << b_StoreAll << " "
+	    << b_H1 << " "
+	    << b_H2 <<std::endl;
+}
+
 ifstream nwlConfigParser::OpenFile()
 {
   ifstream is (fname, ifstream::binary); // open file
   try{
-   if (!is.is_open())
-	throw std::runtime_error("Cannot open config file " + fname);;    
-   }
+    if (!is.is_open())
+      throw std::runtime_error("Cannot open config file " + fname);;    
+  }
   catch (const std::exception& e)
-  {
-    cerr << "Exception: " << e.what() << endl;
-  }    
+    {
+      cerr << "Exception: " << e.what() << endl;
+    }    
   return is;
 }
 
-//=========================================================================================================== NumberOfEvents 
-long nwlConfigParser::GetNumberOfEvents(){
+//====================== NumberOfEvents 
+void nwlConfigParser::ReadNumberOfEvents(){
   ifstream is = OpenFile();
 
   long number;
@@ -49,8 +86,7 @@ long nwlConfigParser::GetNumberOfEvents(){
   while(getline (is,CurStr)){
 
     if( CurStr.compare(0, 14, "NumberOfEvents")==0 ){
-     
-      
+        
       string NumberOfEvents;
       size_t found = CurStr.find_first_of("#");
       if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
@@ -58,7 +94,7 @@ long nwlConfigParser::GetNumberOfEvents(){
       
       if(found==string::npos){
 	oerr <<"\n\nERROR: There is no any space in [NumberOfEvents] string" <<endl;
-	return -1;
+	return;
       }else{
 	
 	NumberOfEvents = CurStr.substr(found+1);
@@ -78,24 +114,68 @@ long nwlConfigParser::GetNumberOfEvents(){
 
     oerr <<"\n\nERROR: config file is not read" <<endl;
     is.close();
-    return -1;
+    return;
   }//end if(eof)
 
   is.close();
-  return number;
+  
+  m_EventNb = number;
+  b_EventNb = true;
 }
 
-
-
-
-
-
-//============================================================================================================ LoggingType
-string  nwlConfigParser::GetLoggingType(){
+//========================= GeneratorMacro
+void nwlConfigParser::ReadGeneratorMacro(){
 
   ifstream is = OpenFile();
 
-  string LoggingType;
+  string CurStr;
+
+  while(getline (is,CurStr)){
+    
+    if( CurStr.compare(0, 14, "GeneratorMacro")==0 ){
+      
+      size_t found = CurStr.find_first_of("#");
+      if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+      found = CurStr.find_first_of(" ");
+      
+      if(found==string::npos){
+	oerr <<"\n\nERROR: There is no any space in [GeneratorMacro] string" << endl;
+	return;
+      }else{
+
+	m_GenMacro = CurStr.substr(found+1);
+	while(m_GenMacro.c_str()[0]==' ')
+	  {
+	    m_GenMacro = m_GenMacro.substr(1);
+	  }
+	found = m_GenMacro.find_first_of(" ");
+	if(found!=string::npos)
+	  {
+	    m_GenMacro = m_GenMacro.substr(0, found);
+	  }
+	
+      }//end if(space)
+    }//end if(GenMacro)
+    
+    CurStr.clear();
+  }//end while()
+
+  if (!is.eof()){    
+    oerr <<"\n\nERROR: config file is not read" << endl;
+    is.close();
+    return;
+  }//end if(eof)
+
+  is.close();
+
+  b_GenMacro = true;
+}
+
+//========================= LoggingType
+void nwlConfigParser::ReadLoggingType(){
+
+  ifstream is = OpenFile();
+
   string CurStr;
 
   while(getline (is,CurStr)){
@@ -108,34 +188,37 @@ string  nwlConfigParser::GetLoggingType(){
       
       if(found==string::npos){
 	oerr <<"\n\nERROR: There is no any space in [LoggingType] string" << endl;
-	return LoggingType;
-      }else{
-
-	LoggingType = CurStr.substr(found+1);
-	while(LoggingType.c_str()[0]==' '){ LoggingType = LoggingType.substr(1); }
-	found = LoggingType.find_first_of(" ");
-	if(found!=string::npos){   LoggingType = LoggingType.substr(0, found); }
-	
-      }//end if(space)
+	return;
+      } else
+	{
+	  m_LoggingType = CurStr.substr(found+1);
+	  while(m_LoggingType.c_str()[0]==' ')
+	    {
+	      m_LoggingType = m_LoggingType.substr(1);
+	    }
+	  found = m_LoggingType.find_first_of(" ");
+	  if(found!=string::npos)
+	    {
+	      m_LoggingType = m_LoggingType.substr(0, found);
+	    }	  
+	}//end if(space)
     }//end if(LoggingType)
     
     CurStr.clear();
   }//end while()
 
-  
   if (!is.eof()){
     
     oerr <<"\n\nERROR: config file is not read" << endl;
     is.close();
-    return LoggingType;
+    return;
   }//end if(eof)
 
   is.close();
-  return LoggingType;
+  b_LoggingType = true;
 }
 
-
-//=================================================================================================================== 'Source
+//===================================== 'Source
 nwlSourceRecord  nwlConfigParser::GetSource(){
   ifstream is = OpenFile();
   
@@ -167,7 +250,7 @@ nwlSourceRecord  nwlConfigParser::GetSource(){
 
 	      found = CurStr.find_first_of(" ");
 
-	        if(found!=string::npos){
+	      if(found!=string::npos){
 		Type = CurStr.substr(found+1);
 		while(Type.c_str()[0]==' '){ Type = Type.substr(1); }
 		found = Type.find_first_of(" ");
@@ -190,13 +273,13 @@ nwlSourceRecord  nwlConfigParser::GetSource(){
 		  found = Spectrum.find_first_of("]");
 		  if(found!=string::npos){ Spectrum = Spectrum.substr(0, found);}
 
-		   bool ParseSpectrum = true;
-		   while(ParseSpectrum){
+		  bool ParseSpectrum = true;
+		  while(ParseSpectrum){
 		     
-		     while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
+		    while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
 		     
-		     string Energy;
-		     double E;
+		    string Energy;
+		    double E;
 		     
 		     
 		    found = Spectrum.find_first_of(",");
@@ -236,10 +319,10 @@ nwlSourceRecord  nwlConfigParser::GetSource(){
 		      ParseSpectrum = false;
 		    }//end else
 		    
-		   }//end while(ParseSpectrum)
+		  }//end while(ParseSpectrum)
 
 
-		   if(stcSource.Energy.size() != stcSource.Intensity.size()) {   oerr <<"\n\nERROR: Different number of energy and intensity in [Source.Spectrum]" << endl;   return stcSource; }
+		  if(stcSource.Energy.size() != stcSource.Intensity.size()) {   oerr <<"\n\nERROR: Different number of energy and intensity in [Source.Spectrum]" << endl;   return stcSource; }
 		}//end if([)
 			
 	      }//end !npos
@@ -279,38 +362,38 @@ nwlSourceRecord  nwlConfigParser::GetSource(){
 		    found = Pencil.find_first_of(")");
 		    if(found!=string::npos){ Pencil = Pencil.substr(0, found);}
 
-		     bool ParsePencil = true;
-		     while(ParsePencil){
+		    bool ParsePencil = true;
+		    while(ParsePencil){
 
-		       while(Pencil.c_str()[0]==' '){ Pencil = Pencil.substr(1); }
+		      while(Pencil.c_str()[0]==' '){ Pencil = Pencil.substr(1); }
 		       
-		       string XYZ;
-		       double Xi;
+		      string XYZ;
+		      double Xi;
 		       
-		       found = Pencil.find_first_of(",");
-		       if(found!=string::npos){
+		      found = Pencil.find_first_of(",");
+		      if(found!=string::npos){
 			 
-			 XYZ = Pencil.substr(0, found);
-			 Pencil = Pencil.substr(found+1);
-			 Xi = atof(XYZ.c_str());
+			XYZ = Pencil.substr(0, found);
+			Pencil = Pencil.substr(found+1);
+			Xi = atof(XYZ.c_str());
 			 
-			 stcSource.Pencil.push_back(Xi);
+			stcSource.Pencil.push_back(Xi);
 			 
-		       }else{
+		      }else{
 			 
-			 found = Pencil.find_first_of(" ");
-			 if(found!=string::npos){ Pencil = Pencil.substr(0, found); }
+			found = Pencil.find_first_of(" ");
+			if(found!=string::npos){ Pencil = Pencil.substr(0, found); }
 			 
-			 Xi = atof(Pencil.c_str());
+			Xi = atof(Pencil.c_str());
 			 
-			 stcSource.Pencil.push_back(Xi);
+			stcSource.Pencil.push_back(Xi);
 			 
-			 ParsePencil = false;
-		       }//end else
+			ParsePencil = false;
+		      }//end else
 		       
-		     }//end while(ParsePencil)
+		    }//end while(ParsePencil)
 
-		     if(stcSource.Pencil.size() != 3){oerr <<"\n\nERROR: Not enough parameters in [Source.Pencil]" << endl;   return stcSource; }
+		    if(stcSource.Pencil.size() != 3){oerr <<"\n\nERROR: Not enough parameters in [Source.Pencil]" << endl;   return stcSource; }
 		     
 		  }//end if("(")
 		  
@@ -410,599 +493,588 @@ nwlSourceRecord  nwlConfigParser::GetSource(){
   return stcSource;
 }
 
-
-//=================================================================================================================== Material
-bool nwlConfigParser::GetMaterial(vector<nwlMaterialRecord>& Materials){
+//============================== Material
+void nwlConfigParser::ReadMaterials(){
   ifstream is = OpenFile();
 
   string CurStr;
 
   while(getline (is,CurStr)){
 
-       if( CurStr.compare("Material")==0 ){
+    if( CurStr.compare("Material")==0 ){
       
-	 while(getline (is,CurStr) && CurStr.compare("Geometry")!=0){
+      while(getline (is,CurStr) && CurStr.compare("Geometry")!=0){	   
+	if( (CurStr.c_str()[0]=='+') && (CurStr.c_str()[1]!='+') ){
 
-	   
-	   if( (CurStr.c_str()[0]=='+') && (CurStr.c_str()[1]!='+') ){
-
-	     string Name;
-	     double Density;
-	     nwlMaterialRecord Material;
-	     size_t found = CurStr.find_first_of("#");
-	     if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-	     found = CurStr.find_first_of(" ");	     
+	  string Name;
+	  //double Density;
+	  nwlMaterialRecord Material;
+	  size_t found = CurStr.find_first_of("#");
+	  if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+	  found = CurStr.find_first_of(" ");	     
 	     
-	     if(found==string::npos){
-	       oerr <<"\n\nERROR: There are no enough spaces in [Material] section" << endl;
-	       return false;
-	     }else{
+	  if(found==string::npos){
+	    oerr <<"\n\nERROR: There are no enough spaces in [Material] section" << endl;
+	    return;
+	  }else{
 	       
-	       CurStr = CurStr.substr(found+1);
-	       while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	       found = CurStr.find_first_of(" ");
-	       if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+	    CurStr = CurStr.substr(found+1);
+	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	    found = CurStr.find_first_of(" ");
+	    if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
 
-	       Material.Name = CurStr;
+	    Material.Name = CurStr;
 	       
-	     }//end else(npos)
+	  }//end else(npos)
+     
+	  while(getline (is,CurStr) && (CurStr.c_str()[0]=='+') && (CurStr.c_str()[1]=='+') ){
 
-	     
-	     
-	     while(getline (is,CurStr) && (CurStr.c_str()[0]=='+') && (CurStr.c_str()[1]=='+') ){
+	    CurStr = CurStr.substr(2);
+	    found = CurStr.find_first_of("#");
+	    if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+	    found = CurStr.find_first_of(" ");
 
-	       CurStr = CurStr.substr(2);
-	       found = CurStr.find_first_of("#");
-	       if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-	       found = CurStr.find_first_of(" ");
-
-	       if(found==string::npos){
-		 oerr <<"\n\nERROR: There are no enough spaces in ["<< Material.Name <<"]" << endl;
-		 return false;
-	       }else{
+	    if(found==string::npos){
+	      oerr <<"\n\nERROR: There are no enough spaces in ["<< Material.Name <<"]" << endl;
+	      return;
+	    }else{
 		 
-		 CurStr = CurStr.substr(found+1);
-		 while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      CurStr = CurStr.substr(found+1);
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
 
-		 string Element;
-		 found = CurStr.find_first_of(" ");
+	      string Element;
+	      found = CurStr.find_first_of(" ");
 
-		 if(found!=string::npos){
+	      if(found!=string::npos){
 
-		   Element = CurStr.substr(0, found);
-		   CurStr = CurStr.substr(found+1);
-		   while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-		   found = CurStr.find_first_of(" ");
-		   if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-
-
+		Element = CurStr.substr(0, found);
+		CurStr = CurStr.substr(found+1);
+		while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+		found = CurStr.find_first_of(" ");
+		if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
 		 
-		   double Fraction = atof(CurStr.c_str());
+		double Fraction = atof(CurStr.c_str());
 
-		   if(Element.compare("Density")==0){
+		if(Element.compare("Density")==0){
 
-		      Material.Density = Fraction;
+		  Material.Density = Fraction;
 		      
-		   }else{
+		}else{
 
-		     Material.Element.push_back(Element);
-		     Material.Fraction.push_back(Fraction);
+		  Material.Element.push_back(Element);
+		  Material.Fraction.push_back(Fraction);
 
-		   }//end else(Element)
+		}//end else(Element)
 		   
-		 }// end if(!npos)
-
+	      }// end if(!npos)
 		 
-		 
-	       }//end else(npos)
+	    }//end else(npos)
 	       
-	       CurStr.clear();
-	     }//end while(++)
+	    CurStr.clear();
+	  }//end while(++)
 
-	     Materials.push_back(Material);
-	   }//end if(+)
+	  m_Materials.push_back(Material);
+	}//end if(+)
 	   
-	   CurStr.clear();
-	 }//end while(!=Geometry)
-       }//end if(Material)
+	CurStr.clear();
+      }//end while(!=Geometry)
+    }//end if(Material)
     
     CurStr.clear();
   }//end while()
 
   
-   if (!is.eof()){
-    
-     oerr <<"\n\nERROR: config file is not read" << endl;
+  if (!is.eof()){
+    oerr <<"\n\nERROR: config file is not read" << endl;
     is.close();
-    return false;
+    return;
   }//end if(eof)
-  
-  
+
   is.close();
-  return true;
+  b_Materials = true;
 }
 
-//================================================================================================================ Geometry
-bool nwlConfigParser::GetGeometry(vector<nwlGeometryRecord>& Volumes){
+//========================= Geometry
+void nwlConfigParser::ReadGeometry()
+{
   ifstream is = OpenFile();
-
+  
   string CurStr;
-
+  
   string PreVolume;
   size_t PreLevel, CurLevel;
   vector<string> tmpVolume;
   vector<size_t> tmpLevel;
   
   while(getline (is,CurStr)){
-
+    
     if( CurStr.compare("Geometry")==0 ){
-
-      while(getline (is,CurStr) && CurStr.compare("Detector")!=0){
-
-	if(CurStr.c_str()[0]=='+'){
-
-	  string Name, exVolume, Material, Type, Parameters, Position, Rotation;
-	  nwlGeometryRecord Volume;
-	  size_t found = CurStr.find_first_of("#");
-	  if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-	  
-	  if(CurStr.c_str()[1]!='+'){
-
-	    PreLevel = CurStr.find_last_of("+");
-	    found = CurStr.find_first_of(" ");
+      
+      while(getline (is,CurStr) && CurStr.compare("Detector")!=0)
+	{
+	  if(CurStr.c_str()[0]=='+'){
 	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
-	      return false;
-	    }
+	    string Name, exVolume, Material, Type, Parameters, Position, Rotation;
+	    nwlGeometryRecord Volume;
+	    size_t found = CurStr.find_first_of("#");
+	    if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
 	    
-	    CurStr = CurStr.substr(found+1);
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(" ");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
-	      return false;
-	    }
-	    
-	    PreVolume = CurStr.substr(0, found);
-	    CurStr = CurStr.substr(found+1);
-
-	    Volume.Name = PreVolume;
-
-	    
-	  
-
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(" ");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-	    
-	    Material = CurStr.substr(0, found);
-	    CurStr = CurStr.substr(found+1);
-	    
-	    Volume.Material = Material;
-
-	    
-	    
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(" ");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-
-	    Type = CurStr.substr(0, found);
-	    CurStr = CurStr.substr(found+1);
-	    
-	    Volume.Type = Type;
-
-
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of("(");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There is no [(] in ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-	    Parameters = CurStr.substr(0, found+1);
-	    CurStr = CurStr.substr(found+1);
-
-	    while(Parameters.c_str()[0]!='('){
-
-	      while(Parameters.c_str()[0]==' '){ Parameters = Parameters.substr(1); }
-
-	      found = Parameters.find_first_of(" ");
-
-	      if(found!=string::npos){
-	      string Parameter = Parameters.substr(0, found);
-	      Parameters = Parameters.substr(found+1);
-
-	      double par = atof(Parameter.c_str());
-
-	      Volume.Parameters.push_back(par);
-	      }//end if(!npos)
-
-	    }//end while(!="(")
-
-
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(")");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There is no [)] in ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-
-	    Position =  CurStr.substr(0, found+1);
-	    CurStr = CurStr.substr(found+1);
-
-	    while(Position.c_str()[0]!=')'){
-
-	      while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
+	    if(CurStr.c_str()[1]!='+'){
 	      
-	      found = Position.find_first_of(",");
-
-	      if(found!=string::npos){
-		string XYZ = Position.substr(0, found);
-		Position = Position.substr(found+1);
-		
-		double Xi = atof(XYZ.c_str());
-		
-		Volume.Position.push_back(Xi);
-	      }else{
-		
-		found = Position.find_first_of(")");
-
-		string XYZ = Position.substr(0, found);
-		Position = Position.substr(found);
-
-		double Xi = atof(XYZ.c_str());
-		
-		Volume.Position.push_back(Xi);
-		
-	      }//end if(!npos)
+	      PreLevel = CurStr.find_last_of("+");
+	      found = CurStr.find_first_of(" ");
 	      
-	    }//end while(!=")")
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
+		return;
+	      }
+	    
+	      CurStr = CurStr.substr(found+1);
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(" ");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
+		return;
+	      }
+	    
+	      PreVolume = CurStr.substr(0, found);
+	      CurStr = CurStr.substr(found+1);
+	    
+	      Volume.Name = PreVolume;
+	    
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(" ");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+	    
+	    
+	      Material = CurStr.substr(0, found);
+	      CurStr = CurStr.substr(found+1);
+	    
+	      Volume.Material = Material;
+	    
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(" ");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+	    
+	      Type = CurStr.substr(0, found);
+	      CurStr = CurStr.substr(found+1);
+	    
+	      Volume.Type = Type;
+	    
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of("(");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There is no [(] in ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+	    
+	      Parameters = CurStr.substr(0, found+1);
+	      CurStr = CurStr.substr(found+1);
+	    
+	      while(Parameters.c_str()[0]!='('){
+	      
+		while(Parameters.c_str()[0]==' '){ Parameters = Parameters.substr(1); }
 
-	    if( (Volume.Position.size() != 0) && (Volume.Position.size() != 3) ){oerr <<"\n\nERROR: Not enough [Position] parameters in Volume ["<< Volume.Name <<"]" << endl;   return false; }
+		found = Parameters.find_first_of(" ");
+	      
+		if(found!=string::npos){
+		  string Parameter = Parameters.substr(0, found);
+		  Parameters = Parameters.substr(found+1);
+		
+		  double par = atof(Parameter.c_str());
+		
+		  Volume.Parameters.push_back(par);
+		}//end if(!npos)
+	      
+	      }//end while(!="(")
+	    
+
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(")");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There is no [)] in ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+
+
+	      Position =  CurStr.substr(0, found+1);
+	      CurStr = CurStr.substr(found+1);
+
+	      while(Position.c_str()[0]!=')'){
+
+		while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
+	      
+		found = Position.find_first_of(",");
+
+		if(found!=string::npos){
+		  string XYZ = Position.substr(0, found);
+		  Position = Position.substr(found+1);
+		
+		  double Xi = atof(XYZ.c_str());
+		
+		  Volume.Position.push_back(Xi);
+		} else {
+		
+		  found = Position.find_first_of(")");
+
+		  string XYZ = Position.substr(0, found);
+		  Position = Position.substr(found);
+
+		  double Xi = atof(XYZ.c_str());
+		
+		  Volume.Position.push_back(Xi);
+		
+		}//end if(!npos)
+	      
+	      }//end while(!=")")
+
+	      if( (Volume.Position.size() != 0) && (Volume.Position.size() != 3) ){oerr <<"\n\nERROR: Not enough [Position] parameters in Volume ["<< Volume.Name <<"]" << endl;   return; }
 
 	    
-	     while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	     if(CurStr.c_str()[0]=='['){ CurStr = CurStr.substr(1); }
-	     else{ oerr <<"\n\nERROR: There is no [[] in ["<< Volume.Name <<"]" << endl;  return false; }
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      if(CurStr.c_str()[0]=='['){ CurStr = CurStr.substr(1); }
+	      else{ oerr <<"\n\nERROR: There is no [[] in ["<< Volume.Name <<"]" << endl;  return; }
 
-	     found = CurStr.find_first_of("]");
+	      found = CurStr.find_first_of("]");
 	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There is no []] in ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There is no []] in ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
 
+	      Rotation =  CurStr.substr(0, found+1);
+	      CurStr = CurStr.substr(found+1);
 
-	    Rotation =  CurStr.substr(0, found+1);
-	    CurStr = CurStr.substr(found+1);
+	      while(Rotation.c_str()[0]!=']'){
 
-	    while(Rotation.c_str()[0]!=']'){
-
-	      while(Rotation.c_str()[0]==' '){ Rotation = Rotation.substr(1); }
+		while(Rotation.c_str()[0]==' '){ Rotation = Rotation.substr(1); }
 	      
-	      found = Rotation.find_first_of(",");
+		found = Rotation.find_first_of(",");
 
-	       if(found!=string::npos){
-		 string XYZ = Rotation.substr(0, found);
-		 Rotation = Rotation.substr(found+1);
+		if(found!=string::npos){
+		  string XYZ = Rotation.substr(0, found);
+		  Rotation = Rotation.substr(found+1);
 		 
-		 double Xi = atof(XYZ.c_str());
+		  double Xi = atof(XYZ.c_str());
 		 
-		 Volume.Rotation.push_back(Xi);
-	       }else{
+		  Volume.Rotation.push_back(Xi);
+		}else{
 		 
-		 found = Rotation.find_first_of("]");
+		  found = Rotation.find_first_of("]");
 		 
-		 string XYZ = Rotation.substr(0, found);
-		 Rotation = Rotation.substr(found);
+		  string XYZ = Rotation.substr(0, found);
+		  Rotation = Rotation.substr(found);
 		 
-		 double Xi = atof(XYZ.c_str());
+		  double Xi = atof(XYZ.c_str());
 		 
-		 Volume.Rotation.push_back(Xi);
+		  Volume.Rotation.push_back(Xi);
 		 
-	       }//end if(!npos)
+		}//end if(!npos)
 	      
-	    }//end while(!="]")
+	      }//end while(!="]")
 
 
-	    if( (Volume.Rotation.size() != 0) && (Volume.Rotation.size() != 9) ){ oerr <<"\n\nERROR: Not enough [Rotation matrix] parameters in Volume ["<< Volume.Name <<"]" << endl;   return false; }
+	      if( (Volume.Rotation.size() != 0) && (Volume.Rotation.size() != 9) ){ oerr <<"\n\nERROR: Not enough [Rotation matrix] parameters in Volume ["<< Volume.Name <<"]" << endl;   return; }
 
 	       
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    if(CurStr.c_str()[0] == 0){ Volume.Weight = 1.0; }
-	    else{
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      if(CurStr.c_str()[0] == 0){ Volume.Weight = 1.0; }
+	      else{
+		found = CurStr.find_first_of(" ");
 
-	      found = CurStr.find_first_of(" ");
-	      if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+		if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
 
-	      Volume.Weight = atof(CurStr.c_str());
-	      
-	      
-	    }//end else
-
-	     
-	  
-
+		Volume.Weight = atof(CurStr.c_str());
+	      }//end else
 	    
-	    
-	  }else{
-
-	    CurLevel = CurStr.find_last_of("+");
-	    found = CurStr.find_first_of(" ");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
-	      return false;
-	    }
-	    
-	    CurStr = CurStr.substr(found+1);
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(" ");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
-	      return false;
-	    }
-	    
-	    Name = CurStr.substr(0, found);
-	    CurStr = CurStr.substr(found+1);
-	    
-	    Volume.Name = Name;
-
-
-	    
-	    //----------------------------------------------------------------- Volume nesting
-	    if( CurLevel > PreLevel){
-
-	      Volume.exVolume = PreVolume;
-
-	      tmpVolume.push_back(PreVolume);
-	      tmpLevel.push_back(CurLevel);
-
-	      PreVolume = Name;
-	      PreLevel = CurLevel;
-
-	    } else if(CurLevel == PreLevel){
-
-	      int iV;
-	      for(unsigned int i = 0; i < tmpLevel.size(); i++) { if(CurLevel == tmpLevel[i])  iV = i; }
-
-	      Volume.exVolume = tmpVolume[iV];
-
-	      PreVolume = Name;
-	     
-
 	    }else{
 
-	      int iV;
-	      for(unsigned int i = 0; i < tmpLevel.size(); i++) { if(CurLevel == tmpLevel[i])  iV = i; }
-
-	      Volume.exVolume = tmpVolume[iV];
-
-	      PreVolume = Name;
-	      PreLevel = CurLevel;
-
-	    }//if(CurLevel)
-	    //===================================================================================
-
-	    
-
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(" ");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in Volume ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-	    
-	    
-	    Material = CurStr.substr(0, found);
-	    CurStr = CurStr.substr(found+1);
-	    
-	    Volume.Material = Material;
-	    
-	    
-	    
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(" ");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There are no enough spaces in Volume ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-
-	    Type = CurStr.substr(0, found);
-	    CurStr = CurStr.substr(found+1);
-	    
-	    Volume.Type = Type;
-
-
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of("(");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There is no [(] in Volume ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-	    Parameters = CurStr.substr(0, found+1);
-	    CurStr = CurStr.substr(found+1);
-
-	    while(Parameters.c_str()[0]!='('){
-
-	      while(Parameters.c_str()[0]==' '){ Parameters = Parameters.substr(1); }
-
-	      found = Parameters.find_first_of(" ");
-
-	      if(found!=string::npos){
-	      string Parameter = Parameters.substr(0, found);
-	      Parameters = Parameters.substr(found+1);
-
-	      double par = atof(Parameter.c_str());
-
-	      Volume.Parameters.push_back(par);
-	      }//end if(!npos)
-
-	    }//end while(!="(")
-
-
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    found = CurStr.find_first_of(")");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There is no [)] in Volume ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-
-	    Position =  CurStr.substr(0, found+1);
-	    CurStr = CurStr.substr(found+1);
-
-	    while(Position.c_str()[0]!=')'){
-
-	      while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
-	      
-	      found = Position.find_first_of(",");
-
-	      if(found!=string::npos){
-		string XYZ = Position.substr(0, found);
-		Position = Position.substr(found+1);
-		
-		double Xi = atof(XYZ.c_str());
-		
-		Volume.Position.push_back(Xi);
-	      }else{
-		
-		found = Position.find_first_of(")");
-
-		string XYZ = Position.substr(0, found);
-		Position = Position.substr(found);
-
-		double Xi = atof(XYZ.c_str());
-		
-		Volume.Position.push_back(Xi);
-		
-	      }//end if(!npos)
-	      
-	    }//end while(!=")")
-
-
-	    if( (Volume.Position.size() != 0) && (Volume.Position.size() != 3) ){oerr <<"\n\nERROR: Not enough [Position] parameters in Volume ["<< Volume.Name <<"]" << endl;   return false; }
-
-	    
-	     while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	     if(CurStr.c_str()[0]=='['){ CurStr = CurStr.substr(1); }
-	     else{ oerr <<"\n\nERROR: There is no [[] in Volume ["<< Volume.Name <<"]" << endl;  return false; }
-
-	     found = CurStr.find_first_of("]");
-	    
-	    if(found==string::npos){
-	      oerr <<"\n\nERROR: There is no []] in Volume ["<< Volume.Name <<"]" << endl;
-	      return false;
-	    }
-
-
-	    Rotation =  CurStr.substr(0, found+1);
-	    CurStr = CurStr.substr(found+1);
-
-	    while(Rotation.c_str()[0]!=']'){
-
-	      while(Rotation.c_str()[0]==' '){ Rotation = Rotation.substr(1); }
-	      
-	      found = Rotation.find_first_of(",");
-
-	       if(found!=string::npos){
-		 string XYZ = Rotation.substr(0, found);
-		 Rotation = Rotation.substr(found+1);
-		 
-		 double Xi = atof(XYZ.c_str());
-		 
-		 Volume.Rotation.push_back(Xi);
-	       }else{
-		 
-		 found = Rotation.find_first_of("]");
-		 
-		 string XYZ = Rotation.substr(0, found);
-		 Rotation = Rotation.substr(found);
-		 
-		 double Xi = atof(XYZ.c_str());
-		 
-		 Volume.Rotation.push_back(Xi);
-		 
-	       }//end if(!npos)
-	      
-	    }//end while(!="]")
-
-	    if( (Volume.Rotation.size() != 0) && (Volume.Rotation.size() != 9) ){ oerr <<"\n\nERROR: Not enough [Rotation matrix] parameters in Volume ["<< Volume.Name <<"]" << endl;   return false; }
-
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
-	    if(CurStr.c_str()[0] == 0){ Volume.Weight = 1.0; }
-	    else{
-
+	      CurLevel = CurStr.find_last_of("+");
 	      found = CurStr.find_first_of(" ");
-	      if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
+		return;
+	      }
+	    
+	      CurStr = CurStr.substr(found+1);
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(" ");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in [Geometry] section" << endl;
+		return;
+	      }
+	    
+	      Name = CurStr.substr(0, found);
+	      CurStr = CurStr.substr(found+1);
+	    
+	      Volume.Name = Name;
+	    
+	      //----------------- Volume nesting
+	      if( CurLevel > PreLevel){
 
-	      Volume.Weight = atof(CurStr.c_str());
+		Volume.exVolume = PreVolume;
+
+		tmpVolume.push_back(PreVolume);
+		tmpLevel.push_back(CurLevel);
+
+		PreVolume = Name;
+		PreLevel = CurLevel;
+
+	      } else if(CurLevel == PreLevel){
+
+		int iV;
+		for(unsigned int i = 0; i < tmpLevel.size(); i++) { if(CurLevel == tmpLevel[i])  iV = i; }
+
+		Volume.exVolume = tmpVolume[iV];
+
+		PreVolume = Name;
+	     
+
+	      }else{
+
+		int iV;
+		for(unsigned int i = 0; i < tmpLevel.size(); i++) { if(CurLevel == tmpLevel[i])  iV = i; }
+
+		Volume.exVolume = tmpVolume[iV];
+
+		PreVolume = Name;
+		PreLevel = CurLevel;
+
+	      }//if(CurLevel)
+	      //===================================================================================
+
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(" ");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in Volume ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+	  	    
+	      Material = CurStr.substr(0, found);
+	      CurStr = CurStr.substr(found+1);
+	    
+	      Volume.Material = Material;
+	    	    
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(" ");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There are no enough spaces in Volume ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+
+
+	      Type = CurStr.substr(0, found);
+	      CurStr = CurStr.substr(found+1);
+	    
+	      Volume.Type = Type;
+
+
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of("(");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There is no [(] in Volume ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+
+	      Parameters = CurStr.substr(0, found+1);
+	      CurStr = CurStr.substr(found+1);
+
+	      while(Parameters.c_str()[0]!='('){
+
+		while(Parameters.c_str()[0]==' '){ Parameters = Parameters.substr(1); }
+
+		found = Parameters.find_first_of(" ");
+
+		if(found!=string::npos){
+		  string Parameter = Parameters.substr(0, found);
+		  Parameters = Parameters.substr(found+1);
+
+		  double par = atof(Parameter.c_str());
+
+		  Volume.Parameters.push_back(par);
+		}//end if(!npos)
+
+	      }//end while(!="(")
+
+
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      found = CurStr.find_first_of(")");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There is no [)] in Volume ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
+
+	      Position =  CurStr.substr(0, found+1);
+	      CurStr = CurStr.substr(found+1);
+
+	      while(Position.c_str()[0]!=')'){
+
+		while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
 	      
+		found = Position.find_first_of(",");
+
+		if(found!=string::npos){
+		  string XYZ = Position.substr(0, found);
+		  Position = Position.substr(found+1);
+		
+		  double Xi = atof(XYZ.c_str());
+		
+		  Volume.Position.push_back(Xi);
+		}else{
+		
+		  found = Position.find_first_of(")");
+
+		  string XYZ = Position.substr(0, found);
+		  Position = Position.substr(found);
+
+		  double Xi = atof(XYZ.c_str());
+		
+		  Volume.Position.push_back(Xi);
+		
+		}//end if(!npos)
 	      
-	    }//end else
+	      }//end while(!=")")
 
 
+	      if( (Volume.Position.size() != 0) && (Volume.Position.size() != 3) )
+		{
+		  oerr <<"\n\nERROR: Not enough [Position] parameters in Volume ["
+		       << Volume.Name <<"]" << endl;
+		  return;
+		}
+	    
+	      while(CurStr.c_str()[0]==' ') { CurStr = CurStr.substr(1); }
+	      if(CurStr.c_str()[0]=='[') { CurStr = CurStr.substr(1); }
+	      else
+		{
+		  oerr <<"\n\nERROR: There is no [[] in Volume ["<< Volume.Name <<"]" << endl;
+		  return;
+		}
 
-	  }//end else(+ or ++...)
+	      found = CurStr.find_first_of("]");
+	    
+	      if(found==string::npos){
+		oerr <<"\n\nERROR: There is no []] in Volume ["<< Volume.Name <<"]" << endl;
+		return;
+	      }
 
-	   Volumes.push_back(Volume);
 
-	   if( (Volume.Type.compare("Box")==0) && (Volume.Parameters.size() != 3) ){oerr <<"\n\nERROR: Wrong number of [Box] parameters (not 3) in Volume ["<< Volume.Name <<"]" << endl;   return false;  }
-	   else if( (Volume.Type.compare("Tub")==0) && (Volume.Parameters.size() != 5) ){oerr <<"\n\nERROR: Wrong number of [Tub] parameters (not 5) in Volume ["<< Volume.Name <<"]" << endl;   return false;}
-	   else if( (Volume.Type.compare("Con")==0) && (Volume.Parameters.size() != 7) ){oerr <<"\n\nERROR: Wrong number of [Con] parameters (not 7) in Volume ["<< Volume.Name <<"]" << endl;   return false;}
-	   else if( (Volume.Type.compare("Trd")==0) && (Volume.Parameters.size() != 5) ){oerr <<"\n\nERROR: Wrong number of [Trd] parameters (not 5) in Volume ["<< Volume.Name <<"]" << endl;   return false;}
-	   else if( (Volume.Type.compare("Sphere")==0) && (Volume.Parameters.size() != 6) ){oerr <<"\n\nERROR: Wrong number of [Sphere] parameters (not 6) in Volume ["<< Volume.Name <<"]" << endl;   return false;}
+	      Rotation =  CurStr.substr(0, found+1);
+	      CurStr = CurStr.substr(found+1);
 
-	   
-	}//end if(+)
+	      while(Rotation.c_str()[0]!=']'){
+
+		while(Rotation.c_str()[0]==' '){ Rotation = Rotation.substr(1); }
+	      
+		found = Rotation.find_first_of(",");
+
+		if(found!=string::npos){
+		  string XYZ = Rotation.substr(0, found);
+		  Rotation = Rotation.substr(found+1);
+		 
+		  double Xi = atof(XYZ.c_str());
+		 
+		  Volume.Rotation.push_back(Xi);
+		} else{
+		 
+		  found = Rotation.find_first_of("]");
+		 
+		  string XYZ = Rotation.substr(0, found);
+		  Rotation = Rotation.substr(found);
+		 
+		  double Xi = atof(XYZ.c_str());
+		 
+		  Volume.Rotation.push_back(Xi);
+		 
+		}//end if(!npos)
+	      
+	      }//end while(!="]")
+
+	      if( (Volume.Rotation.size() != 0) && (Volume.Rotation.size() != 9) )
+		{
+		  oerr <<"\n\nERROR: Not enough [Rotation matrix] parameters in Volume ["
+		       << Volume.Name <<"]" << endl;
+		  return;
+		}
+
+	      while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+	      if(CurStr.c_str()[0] == 0){ Volume.Weight = 1.0; }
+	      else{
+
+		found = CurStr.find_first_of(" ");
+		if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+
+		Volume.Weight = atof(CurStr.c_str());
+	      }//end else
+	    }//end else(+ or ++...)
+	      
+	    m_Volumes.push_back(Volume);
+
+	    if( (Volume.Type.compare("Box")==0) && (Volume.Parameters.size() != 3) )
+	      {
+		oerr <<"\n\nERROR: Wrong number of [Box] parameters (not 3) in Volume ["
+		     << Volume.Name <<"]" << endl;
+		return ;
+	      } else if( (Volume.Type.compare("Tub")==0) && (Volume.Parameters.size() != 5) )
+	      {
+		oerr <<"\n\nERROR: Wrong number of [Tub] parameters (not 5) in Volume ["
+		     << Volume.Name <<"]" << endl;
+		return ;
+	      } else if( (Volume.Type.compare("Con")==0) && (Volume.Parameters.size() != 7) )
+	      {
+		oerr <<"\n\nERROR: Wrong number of [Con] parameters (not 7) in Volume ["
+		     << Volume.Name <<"]" << endl;
+		return ;
+	      } else if( (Volume.Type.compare("Trd")==0) && (Volume.Parameters.size() != 5) )
+	      {
+		oerr <<"\n\nERROR: Wrong number of [Trd] parameters (not 5) in Volume ["
+		     << Volume.Name <<"]" << endl;
+		return ;
+	      } else if( (Volume.Type.compare("Sphere")==0) && (Volume.Parameters.size() != 6) )
+	      {
+		oerr <<"\n\nERROR: Wrong number of [Sphere] parameters (not 6) in Volume ["
+		     << Volume.Name <<"]" << endl;
+		return ;
+	      }
+	  }//end if(+)
        
-	CurStr.clear();
-      }//while(!=Detector)
+	  CurStr.clear();
+	}//while(!=Detector)
     }//end if(Geometry)
     
     CurStr.clear();
   }//end while()
-  
-
-
-  
-  if (!is.eof()){
     
+  if (!is.eof()){
     oerr <<"\n\nERROR: config file is not read" << endl;
     is.close();
-    return false;
+    return;
   }//end if(eof)
-  
-  
+    
   is.close();
-  return true;
+  b_Volumes = true;
 }
 
 
-//================================================================================================================ Detector
-bool nwlConfigParser::GetDetector(vector<string>& Detectors){
+//====================== Detector
+void nwlConfigParser::ReadDetectors(){
   ifstream is = OpenFile();
   
   string CurStr;
@@ -1021,7 +1093,7 @@ bool nwlConfigParser::GetDetector(vector<string>& Detectors){
 	  
 	  if(found==string::npos){
 	    oerr <<"\n\nERROR: There are no enough spaces in [Detector] section" << endl;
-	    return false;
+	    return;
 	  }else{
 	    
 	    CurStr = CurStr.substr(found+1);
@@ -1029,7 +1101,7 @@ bool nwlConfigParser::GetDetector(vector<string>& Detectors){
 	    found = CurStr.find_first_of(" ");
 	    if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
 
-	    Detectors.push_back(CurStr);
+	    m_Detectors.push_back(CurStr);
 	  }//end else
 	  
 	}//end if(+)
@@ -1041,20 +1113,19 @@ bool nwlConfigParser::GetDetector(vector<string>& Detectors){
   }//end while()
   
   
-  if (!is.eof()){
-    
-    oerr <<"\n\nERROR: config file is not read" << endl;
-    is.close();
-    return false;
-  }//end if(eof)
-  
-  
+  if (!is.eof())
+    {
+      oerr <<"\n\nERROR: config file is not read" << endl;
+      is.close();
+      return;
+    }//end if(eof)
   is.close();
-  return true;
+  
+  b_Detectors = true;
 }
 
 //=========================================================================================================== GetOutput
-bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& H2Ds, bool& WriteNtuple){
+void nwlConfigParser::ReadOutput(){
   ifstream is = OpenFile();
 
   string CurStr;
@@ -1073,7 +1144,7 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 
 	  if(found==string::npos){
 	    oerr <<"\n\nERROR: There are no enough spaces in [Output] section" << endl;
-	    return false;
+	    return;
 	  }//end if(" ")
 	  
 	  
@@ -1083,7 +1154,7 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 
 	  if(found==string::npos){
 	    oerr <<"\n\nERROR: There are no enough spaces in [Output] section" << endl;
-	    return false;
+	    return;
 	  }//end if(" ")
 	  
 
@@ -1100,7 +1171,7 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H1D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 
 	   
@@ -1108,31 +1179,29 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 
 	    if( (H1D.PhysQ.compare("Energy")!=0) && (H1D.PhysQ.compare("Time")!=0) && (H1D.PhysQ.compare("X")!=0) &&  (H1D.PhysQ.compare("Y")!=0) && (H1D.PhysQ.compare("Z")!=0) && (H1D.PhysQ.compare("ProcessID")!=0) && (H1D.PhysQ.compare("NucleusA")!=0) && (H1D.PhysQ.compare("NucleusZ")!=0) ){
 	      oerr <<"\n\nERROR: " << H1D.PhysQ  << "is invalid value of [physical quantity] in [H1D]" << endl;
-	      return false;
+	      return;
 	    }
-	    
-	    
+	    	    
 	    CurStr = CurStr.substr(found+1);
 	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
 	    found = CurStr.find_first_of(" ");
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H1D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 
 	    string Nbins;
 	    Nbins = CurStr.substr(0, found);
 	    H1D.Nbins = atoi(Nbins.c_str());
 
-
 	    CurStr = CurStr.substr(found+1);
 	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
 	    found = CurStr.find_first_of(" ");
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H1D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 
 	    string Xmin;
@@ -1146,9 +1215,10 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    H1D.Xmax = atof(CurStr.c_str());
 	    
-	    H1Ds.push_back(H1D);
+	    m_H1Ds.push_back(H1D);
+	    b_H1 = true;
 
-	  }else if(Type.compare("H2D")==0){
+	  } else if(Type.compare("H2D")==0){
 
 	    nwlH2Record H2D;
 
@@ -1156,25 +1226,23 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H2D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
-	    
-	    
+	    	    
 	    H2D.PhysQ_x  = CurStr.substr(0, found);
 
 	    if( (H2D.PhysQ_x.compare("Energy")!=0) && (H2D.PhysQ_x.compare("Time")!=0) && (H2D.PhysQ_x.compare("X")!=0) &&  (H2D.PhysQ_x.compare("Y")!=0) && (H2D.PhysQ_x.compare("Z")!=0) && (H2D.PhysQ_x.compare("ProcessID")!=0) && (H2D.PhysQ_x.compare("NucleusA")!=0) && (H2D.PhysQ_x.compare("NucleusZ")!=0) ){
 	      oerr <<"\n\nERROR: " << H2D.PhysQ_x  << "is invalid value of [physical quantity x] in [H2D]" << endl;
-	      return false;
+	      return;
 	    }
-	    
-	    
+	    	    
 	    CurStr = CurStr.substr(found+1);
 	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
 	    found = CurStr.find_first_of(" ");
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H2D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 
 	    string Nbinsx;
@@ -1187,7 +1255,7 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H2D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 	    
 	    string Xmin;
@@ -1201,7 +1269,7 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H2D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 	    
 	    string Xmax;
@@ -1215,15 +1283,15 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H2D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 	    
 
-	     H2D.PhysQ_y  = CurStr.substr(0, found);
+	    H2D.PhysQ_y  = CurStr.substr(0, found);
 
 	    if( (H2D.PhysQ_y.compare("Energy")!=0) && (H2D.PhysQ_y.compare("Time")!=0) && (H2D.PhysQ_y.compare("X")!=0) &&  (H2D.PhysQ_y.compare("Y")!=0) && (H2D.PhysQ_y.compare("Z")!=0) && (H2D.PhysQ_y.compare("ProcessID")!=0) && (H2D.PhysQ_y.compare("NucleusA")!=0) && (H2D.PhysQ_y.compare("NucleusZ")!=0) ){
 	      oerr <<"\n\nERROR: " << H2D.PhysQ_y  << "is invalid value of [physical quantity y] in [H2D]" << endl;
-	      return false;
+	      return;
 	    }
 	    
 
@@ -1233,7 +1301,7 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H2D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 	    
 	    string Nbinsy;
@@ -1247,13 +1315,12 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    if(found==string::npos){
 	      oerr <<"\n\nERROR: There are no enough spaces in [Output] section (H2D)" << endl;
-	      return false;
+	      return;
 	    }//end if(" ")
 	    
 	    string Ymin;
 	    Ymin = CurStr.substr(0, found);
 	    H2D.Ymin = atof(Ymin.c_str());
-
 
 	    CurStr = CurStr.substr(found+1);
 	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
@@ -1262,31 +1329,46 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
 	    
 	    H2D.Ymax = atof(CurStr.c_str());
 	    
-	    H2Ds.push_back(H2D);
-	    
-	    
-	  }else if(Type.compare("WriteNtuple")==0){
+	    m_H2Ds.push_back(H2D);
+	    b_H2 = true;
+
+	  } else if(Type.compare("WriteNtuple")==0) {
 
 	    found = CurStr.find_first_of(" ");
 	    if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
 
 	    if( CurStr.compare("True")==0 ){
 
-	      WriteNtuple = true;
+	      b_WriteNtuple = true;
 
 	    }else if(CurStr.compare("False")==0){
 
-	      WriteNtuple = false;
+	      b_WriteNtuple = false;
 	      
-	    }else{
+	    }  else{
 	      oerr <<"\n\nERROR: invalid value of [WriteNtuple] in [Output] section" << endl;
-	      return false;
+	      return;
 	    }//end else(WriteNtuple)
+	  } else if(Type.compare("StoreAllParticles")==0) {
+
+	    found = CurStr.find_first_of(" ");
+	    if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+
+	    if( CurStr.compare("True")==0 ){
+
+	      b_StoreAll = true;
+
+	    }else if(CurStr.compare("False")==0){
+
+	      b_StoreAll = false;
+	      
+	    } else{
+	      oerr <<"\n\nERROR: invalid value of [StoreAllParticles] in [Output] section" << endl;
+	      return;
+	    }//end else(StoreAllParticles)
 
 	  }//end else if(Type)
-	  
-	  
-	  
+	  	  
 	}//end if(+)
 	
     	CurStr.clear();
@@ -1301,10 +1383,8 @@ bool nwlConfigParser::GetOutput(vector<nwlH1Record>& H1Ds, vector<nwlH2Record>& 
     
     oerr <<"\n\nERROR: config file is not read" << endl;
     is.close();
-    return false;
+    return;
   }//end if(eof)
-  
-  
+    
   is.close();
-  return true;
 }

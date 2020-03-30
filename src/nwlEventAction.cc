@@ -4,6 +4,8 @@
 #include "nwlAnalysis.hh"
 #include "nwlSteppingAction.hh"
 #include "nwlParticleSource.hh"
+#include "nwlConfigParser.hh"
+
 #include <time.h>
 
 #include "G4RunManager.hh"
@@ -18,8 +20,8 @@ nwlEventAction* nwlEventAction::Instance()
 }      
 
 nwlEventAction::nwlEventAction()
-: G4UserEventAction(),
-  fPrintModulo(100)
+  : G4UserEventAction(),
+    fPrintModulo(100)
 { 
   fgInstance = this;
 }
@@ -37,63 +39,74 @@ void nwlEventAction::BeginOfEventAction(const G4Event* event)
   
   G4int eventNb = event->GetEventID();
   if (eventNb%fPrintModulo == 0) {  
-       char outstr[200];
-       time_t t;
-       struct tm *tmp;
+    char outstr[200];
+    time_t t;
+    struct tm *tmp;
 
-       t = time(NULL);
-       tmp = localtime(&t);
-       strftime(outstr, sizeof(outstr), "%H%M%S.%d%m%Y", tmp);
+    t = time(NULL);
+    tmp = localtime(&t);
+    strftime(outstr, sizeof(outstr), "%H%M%S.%d%m%Y", tmp);
   
-       G4cout << "\n---> Begin of event: " << eventNb << " " << outstr << G4endl;
-     } 
+    G4cout << "\n---> Begin of event: " << eventNb << " " << outstr << G4endl;
+  } 
 }
 
 void nwlEventAction::StoreParticleInfo(nwlParticleInfo& pinfo)
 {
-    particles.push_back(pinfo);
+  particles.push_back(pinfo);
 }
 
 void nwlEventAction::EndOfEventAction(const G4Event* event)
 {
- // nwlRunAction* ra = nwlRunAction::Instance();
+  // nwlRunAction* ra = nwlRunAction::Instance();
 
   // Store particle info to file and histo
   auto analysisManager = G4AnalysisManager::Instance();
 
+  nwlConfigParser* cfg = nwlConfigParser::Instance();
+
   nwlParticleInfoVector::iterator it;
-  for (it=particles.begin(); it!=particles.end(); ++it)
-  {
-     // one may put some selection logic here
-//     (*it).Write(ra->GetStream());
  
-     G4int counter = 0;
-     analysisManager->FillNtupleIColumn(counter++, event->GetEventID());
-     analysisManager->FillNtupleIColumn(counter++, (*it).GetTrackID());
-     analysisManager->FillNtupleIColumn(counter++, (*it).GetPDG());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().x());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().y());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().z());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginTime());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginKineticEnergy());
-     analysisManager->FillNtupleSColumn(counter++, (*it).GetOriginVolumeName());
-     analysisManager->FillNtupleSColumn(counter++, (*it).GetCreatorProcess());
-     analysisManager->FillNtupleIColumn(counter++, (*it).GetOriginNucleusA());
-     analysisManager->FillNtupleIColumn(counter++, (*it).GetOriginNucleusZ());
-     analysisManager->FillNtupleSColumn(counter++, (*it).GetDetectorID());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetEntrancePoint().x());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetEntrancePoint().y());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetEntrancePoint().z());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetEntranceDirection().x());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetEntranceDirection().y());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetEntranceDirection().z());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetDetectorTime());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetDetectorKineticEnergy());
-     analysisManager->FillNtupleSColumn(counter++, (*it).GetStopInDetectorID());
-     analysisManager->FillNtupleSColumn(counter++, (*it).GetReactionInTheDetector());
-     analysisManager->FillNtupleDColumn(counter++, (*it).GetWeight());
-     analysisManager->AddNtupleRow();
-  }
+  for (it=particles.begin(); it!=particles.end(); ++it)
+    {
+      // one may put some selection logic here
+      //     (*it).Write(ra->GetStream());
+
+      if(cfg->WriteNtuple())
+	{
+	  if(! cfg->StoreAllParticles())
+	    {
+	      if ((*it).GetPDG() != 22 && (*it).GetPDG() != 2112) continue;
+	    }
+	  
+	  G4int counter = 0;
+	  analysisManager->FillNtupleIColumn(counter++, event->GetEventID());
+	  analysisManager->FillNtupleIColumn(counter++, (*it).GetTrackID());
+	  analysisManager->FillNtupleIColumn(counter++, (*it).GetPDG());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().x());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().y());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().z());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginTime());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginKineticEnergy());
+	  analysisManager->FillNtupleSColumn(counter++, (*it).GetOriginVolumeName());
+	  analysisManager->FillNtupleSColumn(counter++, (*it).GetCreatorProcess());
+	  analysisManager->FillNtupleIColumn(counter++, (*it).GetOriginNucleusA());
+	  analysisManager->FillNtupleIColumn(counter++, (*it).GetOriginNucleusZ());
+	  analysisManager->FillNtupleSColumn(counter++, (*it).GetDetectorID());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetEntrancePoint().x());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetEntrancePoint().y());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetEntrancePoint().z());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetEntranceDirection().x());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetEntranceDirection().y());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetEntranceDirection().z());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetDetectorTime());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetDetectorKineticEnergy());
+	  analysisManager->FillNtupleSColumn(counter++, (*it).GetStopInDetectorID());
+	  analysisManager->FillNtupleSColumn(counter++, (*it).GetReactionInTheDetector());
+	  analysisManager->FillNtupleDColumn(counter++, (*it).GetWeight());
+	  analysisManager->AddNtupleRow();
+	}
+    }
  
   Reset();
 

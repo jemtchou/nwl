@@ -40,9 +40,7 @@ int main(int argc,char** argv)
 #endif
 
   nwlConfigParser* cfg = nwlConfigParser::Instance();
-  cfg->SetFilename(std::string(argv[1]));
-
-  std::cout << "Reading config file " << std::string(argv[1]) << std::endl;
+  cfg->ReadConfig(std::string(argv[1]));
 
   // Geometry description
   nwlGeoModel* geo = new nwlGeoModel();
@@ -74,15 +72,15 @@ int main(int argc,char** argv)
   const long* rand1 = rand;
   G4Random::setTheSeeds(rand1);
 
+  std::string gen = cfg->GetGeneratorMacro();
   G4UImanager* UImanager = G4UImanager::GetUIpointer();
-  UImanager->ApplyCommand("/control/execute gen.mac");
+  UImanager->ApplyCommand("/control/execute "+gen);
 
   if(argc==2) // Interactive
   {
     G4VisManager* visManager = new G4VisExecutive;
     visManager->Initialize();
     G4UIExecutive* ui = new G4UIExecutive(argc, argv);
-    G4UImanager* UImanager = G4UImanager::GetUIpointer();
     UImanager->ApplyCommand("/control/execute vis.mac");
     ui->SessionStart();
     delete ui;

@@ -14,37 +14,122 @@ class nwlConfigParser
 {
 public:
 
- static nwlConfigParser* Instance();
+  static nwlConfigParser* Instance();
+
+  void ReadConfig(std::string fn);
  
- void SetFilename(std::string fn) {fname = fn;}; 
+  void SetFilename(std::string fn) {fname = fn;}; 
 
- long GetNumberOfEvents();
+  long GetNumberOfEvents()
+  {
+    return m_EventNb;
+  }
 
- std::string GetLoggingType();
+  std::string GetLoggingType()
+  {
+    return m_LoggingType;
+  }
+ 
+  std::string GetGeneratorMacro()
+  {
+    return m_GenMacro;
+  }
 
- nwlSourceRecord GetSource();
+  nwlSourceRecord GetSource();
 
- bool GetMaterial(std::vector<nwlMaterialRecord>& Materials);
+  bool GetMaterial(std::vector<nwlMaterialRecord>& Materials)
+  {
+    Materials = m_Materials;
+    return b_Materials;
+  };
 
- bool GetGeometry(std::vector<nwlGeometryRecord>& Volumes);
+  bool GetGeometry(std::vector<nwlGeometryRecord>& Volumes)
+  {
+    Volumes = m_Volumes;
+    return b_Volumes;
+  };
 
- bool GetDetector(std::vector<std::string>& Detectors);
+  bool GetDetector(std::vector<std::string>& Detectors)
+  {
+    Detectors = m_Detectors;
+    return b_Detectors;
+  };
 
- bool GetOutput(std::vector<nwlH1Record>& H1Ds, std::vector<nwlH2Record>& H2Ds, bool& WriteNtuple);
+  bool WriteNtuple()
+  {
+    return b_WriteNtuple;
+  }
 
+  bool StoreAllParticles()
+  {
+    return b_StoreAll;
+  }
+
+  bool CreateH1()
+  {
+    return b_H1;
+  }
+
+  bool CreateH2()
+  {
+    return b_H2;
+  }
+  
+  void GetH1s(std::vector<nwlH1Record>& H1Ds)
+  {
+    H1Ds = m_H1Ds;
+  }
+
+  void GetH2s(std::vector<nwlH2Record>& H2Ds)
+  {
+    H2Ds = m_H2Ds;
+  }
+  //bool GetOutput(std::vector<nwlH1Record>& H1Ds, std::vector<nwlH2Record>& H2Ds, bool& WriteNtuple){return true;};
+
+protected:
+  std::ifstream OpenFile(); 
+
+  void ReadNumberOfEvents();
+  void ReadLoggingType();
+  void ReadGeneratorMacro();
+  void ReadMaterials();
+  void ReadGeometry();
+  void ReadDetectors();
+  void ReadOutput();
+  
 private:
- nwlConfigParser();
- ~nwlConfigParser();
- nwlConfigParser(const nwlConfigParser&);
- nwlConfigParser& operator= (const nwlConfigParser&);
+  nwlConfigParser();
+  ~nwlConfigParser();
+  nwlConfigParser(const nwlConfigParser&);
+  nwlConfigParser& operator= (const nwlConfigParser&);
 
- std::ifstream OpenFile(); 
+  // сonfig file name
+  std::string fname;
 
- // сonfig file name
- std::string fname;
+  // configuration
+  long m_EventNb;
+  std::string m_GenMacro;
+  std::string m_LoggingType;
+  std::vector<nwlMaterialRecord> m_Materials;
+  std::vector<nwlGeometryRecord> m_Volumes;
+  std::vector<std::string> m_Detectors;
+  std::vector<nwlH1Record> m_H1Ds;
+  std::vector<nwlH2Record> m_H2Ds;
 
- static nwlConfigParser* pInstance; 
+  bool b_EventNb;
+  bool b_LoggingType;
+  bool b_GenMacro;
+  bool b_Materials;
+  bool b_Volumes;
+  bool b_Detectors;
+  bool b_WriteNtuple;
+  bool b_StoreAll;
+  bool b_H1;
+  bool b_H2;
 
- std::ofstream oerr;
+  static nwlConfigParser* pInstance; 
+
+  std::ofstream oerr;
 };
+
 #endif
