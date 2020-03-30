@@ -67,11 +67,12 @@ ifstream nwlConfigParser::OpenFile()
   ifstream is (fname, ifstream::binary); // open file
   try{
     if (!is.is_open())
-      throw std::runtime_error("Cannot open config file " + fname);;    
+      throw std::runtime_error("Cannot open config file " + fname);
   }
   catch (const std::exception& e)
     {
-      cerr << "Exception: " << e.what() << endl;
+      std::cerr << "Exception: " << e.what() << std::endl;
+      abort();
     }    
   return is;
 }
@@ -80,50 +81,70 @@ ifstream nwlConfigParser::OpenFile()
 void nwlConfigParser::ReadNumberOfEvents(){
   ifstream is = OpenFile();
 
-  long number;
+  long number = -1;
   string CurStr;
 
-  while(getline (is,CurStr)){
+  try{
+    while(getline (is,CurStr)){
 
-    if( CurStr.compare(0, 14, "NumberOfEvents")==0 ){
+      if( CurStr.compare(0, 14, "NumberOfEvents")==0 ){
         
-      string NumberOfEvents;
-      size_t found = CurStr.find_first_of("#");
-      if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-      found = CurStr.find_first_of(" ");
+	string NumberOfEvents;
+	size_t found = CurStr.find_first_of("#");
+	if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+	found = CurStr.find_first_of(" ");
       
-      if(found==string::npos){
-	oerr <<"\n\nERROR: There is no any space in [NumberOfEvents] string" <<endl;
-	return;
-      }else{
+	if(found==string::npos){
+	  throw std::runtime_error("\n\nERROR: There is no any space in [NumberOfEvents] string");
+	} else{
 	
-	NumberOfEvents = CurStr.substr(found+1);
-	while(NumberOfEvents.c_str()[0]==' '){ NumberOfEvents = NumberOfEvents.substr(1); }
-	found = NumberOfEvents.find_first_of(" ");
-	if(found!=string::npos){   NumberOfEvents = NumberOfEvents.substr(0, found); }
+	  NumberOfEvents = CurStr.substr(found+1);
+	  while(NumberOfEvents.c_str()[0]==' '){ NumberOfEvents = NumberOfEvents.substr(1); }
+	  found = NumberOfEvents.find_first_of(" ");
+	  if(found!=string::npos){   NumberOfEvents = NumberOfEvents.substr(0, found); }
 
-	number = atol(NumberOfEvents.c_str());
-
-      }//end if(space)   
-    }//end if(NumberOfEvents)
+	  number = atol(NumberOfEvents.c_str());
+	  b_EventNb = true;
+	}//end if(space)   
+      }//end if(NumberOfEvents)
     
-    CurStr.clear();
-  }//end while()
+      CurStr.clear();
+    }//end while()
 
-  if (!is.eof()){
+    if (!is.eof()){
+      is.close();
+      throw std::runtime_error("\n\nERROR: config file is not read");
+    }//end if(eof)
 
-    oerr <<"\n\nERROR: config file is not read" <<endl;
     is.close();
-    return;
-  }//end if(eof)
-
-  is.close();
+  }
+  catch (const std::exception& e)
+    {
+      std::cerr << "Exception: " << e.what() << std::endl;
+      abort();
+    }
   
   m_EventNb = number;
-  b_EventNb = true;
 }
 
 //========================= GeneratorMacro
+
+std::string nwlConfigParser::GetGeneratorMacro()
+{
+  try{
+    if(! b_GenMacro)
+      throw std::runtime_error("Generator macro is not specified"); 
+  }
+  catch (const std::exception& e)
+    {
+      cerr << "Exception: " << e.what() << endl;
+      abort();
+    }
+  return m_GenMacro;
+}
+
+
+
 void nwlConfigParser::ReadGeneratorMacro(){
 
   ifstream is = OpenFile();
@@ -135,14 +156,14 @@ void nwlConfigParser::ReadGeneratorMacro(){
     if( CurStr.compare(0, 14, "GeneratorMacro")==0 ){
       
       size_t found = CurStr.find_first_of("#");
-      if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+      if(found!=string::npos) { CurStr = CurStr.substr(0, found); }
       found = CurStr.find_first_of(" ");
       
       if(found==string::npos){
 	oerr <<"\n\nERROR: There is no any space in [GeneratorMacro] string" << endl;
 	return;
-      }else{
-
+      }
+      else {	
 	m_GenMacro = CurStr.substr(found+1);
 	while(m_GenMacro.c_str()[0]==' ')
 	  {
@@ -152,6 +173,7 @@ void nwlConfigParser::ReadGeneratorMacro(){
 	if(found!=string::npos)
 	  {
 	    m_GenMacro = m_GenMacro.substr(0, found);
+	    b_GenMacro = true;
 	  }
 	
       }//end if(space)
@@ -167,8 +189,6 @@ void nwlConfigParser::ReadGeneratorMacro(){
   }//end if(eof)
 
   is.close();
-
-  b_GenMacro = true;
 }
 
 //========================= LoggingType
@@ -200,6 +220,7 @@ void nwlConfigParser::ReadLoggingType(){
 	  if(found!=string::npos)
 	    {
 	      m_LoggingType = m_LoggingType.substr(0, found);
+	      b_LoggingType = true;
 	    }	  
 	}//end if(space)
     }//end if(LoggingType)
@@ -215,11 +236,10 @@ void nwlConfigParser::ReadLoggingType(){
   }//end if(eof)
 
   is.close();
-  b_LoggingType = true;
 }
 
 //===================================== 'Source
-nwlSourceRecord  nwlConfigParser::GetSource(){
+/*nwlSourceRecord  nwlConfigParser::GetSource(){
   ifstream is = OpenFile();
   
   nwlSourceRecord stcSource;
@@ -227,271 +247,271 @@ nwlSourceRecord  nwlConfigParser::GetSource(){
 
   while(getline (is,CurStr)){
     
-    if( CurStr.compare("Source")==0 ){
+  if( CurStr.compare("Source")==0 ){
       
-      while(getline (is,CurStr) && CurStr.compare("Material")!=0){
+  while(getline (is,CurStr) && CurStr.compare("Material")!=0){
 	
-	if(CurStr.c_str()[0]=='+'){
+  if(CurStr.c_str()[0]=='+'){
 
-	  string Type, Spectrum, Direction, Pencil, Particle, Position;
-	  size_t found = CurStr.find_first_of("#");
-	  if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-	  found = CurStr.find_first_of(" ");
+  string Type, Spectrum, Direction, Pencil, Particle, Position;
+  size_t found = CurStr.find_first_of("#");
+  if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
+  found = CurStr.find_first_of(" ");
 
-	  if(found==string::npos){
-	    oerr <<"\n\nERROR: There are no enough spaces in [Source] section" << endl;
-	    return stcSource;
-	  }else{
+  if(found==string::npos){
+  oerr <<"\n\nERROR: There are no enough spaces in [Source] section" << endl;
+  return stcSource;
+  }else{
 
-	    CurStr = CurStr.substr(found+1);
-	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
+  CurStr = CurStr.substr(found+1);
+  while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
 
-	    if(CurStr.compare(0, 4, "Type")==0){
+  if(CurStr.compare(0, 4, "Type")==0){
 
-	      found = CurStr.find_first_of(" ");
+  found = CurStr.find_first_of(" ");
 
-	      if(found!=string::npos){
-		Type = CurStr.substr(found+1);
-		while(Type.c_str()[0]==' '){ Type = Type.substr(1); }
-		found = Type.find_first_of(" ");
-		if(found!=string::npos){  Type = Type.substr(0, found); }
+  if(found!=string::npos){
+  Type = CurStr.substr(found+1);
+  while(Type.c_str()[0]==' '){ Type = Type.substr(1); }
+  found = Type.find_first_of(" ");
+  if(found!=string::npos){  Type = Type.substr(0, found); }
 
-		stcSource.Type = Type;
-	      }//end !npos
+  stcSource.Type = Type;
+  }//end !npos
 
-	    }else if(CurStr.compare(0, 8, "Spectrum")==0){
+  }else if(CurStr.compare(0, 8, "Spectrum")==0){
 
-	      found = CurStr.find_first_of(" ");
+  found = CurStr.find_first_of(" ");
 	      
-	      if(found!=string::npos){
-		Spectrum = CurStr.substr(found+1);
-		while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
+  if(found!=string::npos){
+  Spectrum = CurStr.substr(found+1);
+  while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
 
-		if(Spectrum.c_str()[0]=='['){
+  if(Spectrum.c_str()[0]=='['){
 
-		  Spectrum = Spectrum.substr(1);
-		  found = Spectrum.find_first_of("]");
-		  if(found!=string::npos){ Spectrum = Spectrum.substr(0, found);}
+  Spectrum = Spectrum.substr(1);
+  found = Spectrum.find_first_of("]");
+  if(found!=string::npos){ Spectrum = Spectrum.substr(0, found);}
 
-		  bool ParseSpectrum = true;
-		  while(ParseSpectrum){
+  bool ParseSpectrum = true;
+  while(ParseSpectrum){
 		     
-		    while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
+  while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
 		     
-		    string Energy;
-		    double E;
+  string Energy;
+  double E;
 		     
 		     
-		    found = Spectrum.find_first_of(",");
-		    if(found!=string::npos){
+  found = Spectrum.find_first_of(",");
+  if(found!=string::npos){
 		      
-		      Energy = Spectrum.substr(0, found);
-		      Spectrum = Spectrum.substr(found+1);
-		      E = atof(Energy.c_str());
+  Energy = Spectrum.substr(0, found);
+  Spectrum = Spectrum.substr(found+1);
+  E = atof(Energy.c_str());
 
-		      stcSource.Energy.push_back(E);
+  stcSource.Energy.push_back(E);
 		      
-		    }else{ParseSpectrum = false;}
+  }else{ParseSpectrum = false;}
 		    
-		    while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
+  while(Spectrum.c_str()[0]==' '){ Spectrum = Spectrum.substr(1); }
 		    
-		    string Intensity;
-		    double I;
+  string Intensity;
+  double I;
 		    
-		    found = Spectrum.find_first_of(",");
-		    if(found!=string::npos){
+  found = Spectrum.find_first_of(",");
+  if(found!=string::npos){
 		      
-		      Intensity = Spectrum.substr(0, found);
-		      Spectrum = Spectrum.substr(found+1);
-		      I = atof(Intensity.c_str());
+  Intensity = Spectrum.substr(0, found);
+  Spectrum = Spectrum.substr(found+1);
+  I = atof(Intensity.c_str());
 
-		      stcSource.Intensity.push_back(I);
+  stcSource.Intensity.push_back(I);
 		      
-		    }else{
+  }else{
 		      
-		      found = Spectrum.find_first_of(" ");
-		      if(found!=string::npos){ Spectrum = Spectrum.substr(0, found); }
+  found = Spectrum.find_first_of(" ");
+  if(found!=string::npos){ Spectrum = Spectrum.substr(0, found); }
 		      
-		      I = atof(Spectrum.c_str());
+  I = atof(Spectrum.c_str());
 
-		      stcSource.Intensity.push_back(I);
+  stcSource.Intensity.push_back(I);
 		      
-		      ParseSpectrum = false;
-		    }//end else
+  ParseSpectrum = false;
+  }//end else
 		    
-		  }//end while(ParseSpectrum)
+  }//end while(ParseSpectrum)
 
 
-		  if(stcSource.Energy.size() != stcSource.Intensity.size()) {   oerr <<"\n\nERROR: Different number of energy and intensity in [Source.Spectrum]" << endl;   return stcSource; }
-		}//end if([)
+  if(stcSource.Energy.size() != stcSource.Intensity.size()) {   oerr <<"\n\nERROR: Different number of energy and intensity in [Source.Spectrum]" << endl;   return stcSource; }
+  }//end if([)
 			
-	      }//end !npos
+  }//end !npos
 	      
-	    }else if(CurStr.compare(0, 9, "Direction")==0){
+  }else if(CurStr.compare(0, 9, "Direction")==0){
 
-	      found = CurStr.find_first_of(" ");
+  found = CurStr.find_first_of(" ");
 	      
-	      if(found!=string::npos){
+  if(found!=string::npos){
 
-		Direction = CurStr.substr(found+1);
-		while(Direction.c_str()[0]==' '){ Direction = Direction.substr(1); }
+  Direction = CurStr.substr(found+1);
+  while(Direction.c_str()[0]==' '){ Direction = Direction.substr(1); }
 
-		if(Direction.compare(0, 3, "4pi")==0){
+  if(Direction.compare(0, 3, "4pi")==0){
 
-		  found = Direction.find_first_of(" ");
-		  if(found!=string::npos){ Direction = Direction.substr(0, found); }
+  found = Direction.find_first_of(" ");
+  if(found!=string::npos){ Direction = Direction.substr(0, found); }
 
-		  stcSource.Direction = Direction;
+  stcSource.Direction = Direction;
 
-		}else if(Direction.compare(0, 6, "Pencil")==0){
+  }else if(Direction.compare(0, 6, "Pencil")==0){
 
-		  found = Direction.find_first_of(" ");
-		  if(found!=string::npos){
+  found = Direction.find_first_of(" ");
+  if(found!=string::npos){
 
-		    Pencil = Direction.substr(found+1);
-		    while(Pencil.c_str()[0]==' '){ Pencil = Pencil.substr(1); }
+  Pencil = Direction.substr(found+1);
+  while(Pencil.c_str()[0]==' '){ Pencil = Pencil.substr(1); }
 		    
-		    Direction = Direction.substr(0, found);
-		  }//end if(' ')
+  Direction = Direction.substr(0, found);
+  }//end if(' ')
 		  
-		  stcSource.Direction = Direction;
+  stcSource.Direction = Direction;
 
-		  if(Pencil.c_str()[0]=='('){
+  if(Pencil.c_str()[0]=='('){
 
-		    Pencil = Pencil.substr(1);
-		    found = Pencil.find_first_of(")");
-		    if(found!=string::npos){ Pencil = Pencil.substr(0, found);}
+  Pencil = Pencil.substr(1);
+  found = Pencil.find_first_of(")");
+  if(found!=string::npos){ Pencil = Pencil.substr(0, found);}
 
-		    bool ParsePencil = true;
-		    while(ParsePencil){
+  bool ParsePencil = true;
+  while(ParsePencil){
 
-		      while(Pencil.c_str()[0]==' '){ Pencil = Pencil.substr(1); }
+  while(Pencil.c_str()[0]==' '){ Pencil = Pencil.substr(1); }
 		       
-		      string XYZ;
-		      double Xi;
+  string XYZ;
+  double Xi;
 		       
-		      found = Pencil.find_first_of(",");
-		      if(found!=string::npos){
+  found = Pencil.find_first_of(",");
+  if(found!=string::npos){
 			 
-			XYZ = Pencil.substr(0, found);
-			Pencil = Pencil.substr(found+1);
-			Xi = atof(XYZ.c_str());
+  XYZ = Pencil.substr(0, found);
+  Pencil = Pencil.substr(found+1);
+  Xi = atof(XYZ.c_str());
 			 
-			stcSource.Pencil.push_back(Xi);
+  stcSource.Pencil.push_back(Xi);
 			 
-		      }else{
+  }else{
 			 
-			found = Pencil.find_first_of(" ");
-			if(found!=string::npos){ Pencil = Pencil.substr(0, found); }
+  found = Pencil.find_first_of(" ");
+  if(found!=string::npos){ Pencil = Pencil.substr(0, found); }
 			 
-			Xi = atof(Pencil.c_str());
+  Xi = atof(Pencil.c_str());
 			 
-			stcSource.Pencil.push_back(Xi);
+  stcSource.Pencil.push_back(Xi);
 			 
-			ParsePencil = false;
-		      }//end else
+  ParsePencil = false;
+  }//end else
 		       
-		    }//end while(ParsePencil)
+  }//end while(ParsePencil)
 
-		    if(stcSource.Pencil.size() != 3){oerr <<"\n\nERROR: Not enough parameters in [Source.Pencil]" << endl;   return stcSource; }
+  if(stcSource.Pencil.size() != 3){oerr <<"\n\nERROR: Not enough parameters in [Source.Pencil]" << endl;   return stcSource; }
 		     
-		  }//end if("(")
+  }//end if("(")
 		  
-		}//end else if(Direction)
+  }//end else if(Direction)
 		
-	      }//end !npos
+  }//end !npos
 	      
-	    }else if(CurStr.compare(0, 8, "Particle")==0){
+  }else if(CurStr.compare(0, 8, "Particle")==0){
 
-	      found = CurStr.find_first_of(" ");
+  found = CurStr.find_first_of(" ");
 	      
-	      if(found!=string::npos){
-		Particle = CurStr.substr(found+1);
-		while(Particle.c_str()[0]==' '){ Particle = Particle.substr(1); }
-		found = Particle.find_first_of(" ");
-		if(found!=string::npos){  Particle = Particle.substr(0, found); }
+  if(found!=string::npos){
+  Particle = CurStr.substr(found+1);
+  while(Particle.c_str()[0]==' '){ Particle = Particle.substr(1); }
+  found = Particle.find_first_of(" ");
+  if(found!=string::npos){  Particle = Particle.substr(0, found); }
 		
-		stcSource.Particle = Particle;
-	      }//end !npos
+  stcSource.Particle = Particle;
+  }//end !npos
 	      
 	      
-	    }else if(CurStr.compare(0, 8, "Position")==0){
+  }else if(CurStr.compare(0, 8, "Position")==0){
 
-	      found = CurStr.find_first_of(" ");
-	      if(found!=string::npos){
+  found = CurStr.find_first_of(" ");
+  if(found!=string::npos){
 		
-		Position = CurStr.substr(found+1);
-		while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
+  Position = CurStr.substr(found+1);
+  while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
 		
-	      }//end if(' ')
+  }//end if(' ')
 
 	     
-	      if(Position.c_str()[0]=='('){
+  if(Position.c_str()[0]=='('){
 		
-		Position = Position.substr(1);
-		found = Position.find_first_of(")");
-		if(found!=string::npos){ Position = Position.substr(0, found);}
+  Position = Position.substr(1);
+  found = Position.find_first_of(")");
+  if(found!=string::npos){ Position = Position.substr(0, found);}
 		
-		bool ParsePosition = true;
-		while(ParsePosition){
+  bool ParsePosition = true;
+  while(ParsePosition){
 		  
-		  while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
+  while(Position.c_str()[0]==' '){ Position = Position.substr(1); }
 		  
-		  string XYZ;
-		  double Xi;
+  string XYZ;
+  double Xi;
 		  
-		  found = Position.find_first_of(",");
-		  if(found!=string::npos){
+  found = Position.find_first_of(",");
+  if(found!=string::npos){
 		    
-		    XYZ = Position.substr(0, found);
-		    Position = Position.substr(found+1);
-		    Xi = atof(XYZ.c_str());
+  XYZ = Position.substr(0, found);
+  Position = Position.substr(found+1);
+  Xi = atof(XYZ.c_str());
 		    
-		    stcSource.Position.push_back(Xi);
+  stcSource.Position.push_back(Xi);
 		    
-		  }else{
+  }else{
 		    
-		    found = Position.find_first_of(" ");
-		    if(found!=string::npos){ Position = Position.substr(0, found); }
+  found = Position.find_first_of(" ");
+  if(found!=string::npos){ Position = Position.substr(0, found); }
 		    
-		    Xi = atof(Position.c_str());
+  Xi = atof(Position.c_str());
 		    
-		    stcSource.Position.push_back(Xi);
+  stcSource.Position.push_back(Xi);
 		    
-		    ParsePosition = false;
-		  }//end else
+  ParsePosition = false;
+  }//end else
 		  
-		}//end while(ParsePosition)
+  }//end while(ParsePosition)
 
-		if(stcSource.Position.size() != 3){oerr <<"\n\nERROR: Not enough parameters in [Source.Position]" << endl;   return stcSource; }
+  if(stcSource.Position.size() != 3){oerr <<"\n\nERROR: Not enough parameters in [Source.Position]" << endl;   return stcSource; }
 		
-	      }//end if("(")
+  }//end if("(")
 	      
 	      
-	    }//end else if	    
-	  }//end else	  
-	}//end if(+)
+  }//end else if	    
+  }//end else	  
+  }//end if(+)
 	
-	CurStr.clear();
-      }//end while(!=Material)
-    }//end if(Source)
+  CurStr.clear();
+  }//end while(!=Material)
+  }//end if(Source)
     
-    CurStr.clear();
+  CurStr.clear();
   }//end while()
   
   
   
   if (!is.eof()){
     
-    oerr <<"\n\nERROR: config file is not read" << endl;
-    is.close();
-    return stcSource;
+  oerr <<"\n\nERROR: config file is not read" << endl;
+  is.close();
+  return stcSource;
   }//end if(eof)
   
   
   is.close();
   return stcSource;
-}
+  }*/
 
 //============================== Material
 void nwlConfigParser::ReadMaterials(){
@@ -574,6 +594,7 @@ void nwlConfigParser::ReadMaterials(){
 	  }//end while(++)
 
 	  m_Materials.push_back(Material);
+	  b_Materials = true;
 	}//end if(+)
 	   
 	CurStr.clear();
@@ -591,7 +612,6 @@ void nwlConfigParser::ReadMaterials(){
   }//end if(eof)
 
   is.close();
-  b_Materials = true;
 }
 
 //========================= Geometry
@@ -1024,9 +1044,7 @@ void nwlConfigParser::ReadGeometry()
 		Volume.Weight = atof(CurStr.c_str());
 	      }//end else
 	    }//end else(+ or ++...)
-	      
-	    m_Volumes.push_back(Volume);
-
+	    
 	    if( (Volume.Type.compare("Box")==0) && (Volume.Parameters.size() != 3) )
 	      {
 		oerr <<"\n\nERROR: Wrong number of [Box] parameters (not 3) in Volume ["
@@ -1053,6 +1071,9 @@ void nwlConfigParser::ReadGeometry()
 		     << Volume.Name <<"]" << endl;
 		return ;
 	      }
+	    
+	    m_Volumes.push_back(Volume);
+	    b_Volumes = true;
 	  }//end if(+)
        
 	  CurStr.clear();
@@ -1069,7 +1090,6 @@ void nwlConfigParser::ReadGeometry()
   }//end if(eof)
     
   is.close();
-  b_Volumes = true;
 }
 
 
@@ -1102,6 +1122,7 @@ void nwlConfigParser::ReadDetectors(){
 	    if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
 
 	    m_Detectors.push_back(CurStr);
+	    b_Detectors = true;
 	  }//end else
 	  
 	}//end if(+)
@@ -1120,8 +1141,6 @@ void nwlConfigParser::ReadDetectors(){
       return;
     }//end if(eof)
   is.close();
-  
-  b_Detectors = true;
 }
 
 //=========================================================================================================== GetOutput
@@ -1177,7 +1196,7 @@ void nwlConfigParser::ReadOutput(){
 	   
 	    H1D.PhysQ  = CurStr.substr(0, found);
 
-	    if( (H1D.PhysQ.compare("Energy")!=0) && (H1D.PhysQ.compare("Time")!=0) && (H1D.PhysQ.compare("X")!=0) &&  (H1D.PhysQ.compare("Y")!=0) && (H1D.PhysQ.compare("Z")!=0) && (H1D.PhysQ.compare("ProcessID")!=0) && (H1D.PhysQ.compare("NucleusA")!=0) && (H1D.PhysQ.compare("NucleusZ")!=0) ){
+	    if( (H1D.PhysQ.compare("Energy")!=0) && (H1D.PhysQ.compare("Time")!=0) && (H1D.PhysQ.compare("X")!=0) &&  (H1D.PhysQ.compare("Y")!=0) && (H1D.PhysQ.compare("Z")!=0) && (H1D.PhysQ.compare("ProcessID")!=0) && (H1D.PhysQ.compare("NucleusA")!=0) && (H1D.PhysQ.compare("NucleusZ")!=0)  && (H1D.PhysQ.compare("DetectorID")!=0)  && (H1D.PhysQ.compare("PDG")!=0) ){
 	      oerr <<"\n\nERROR: " << H1D.PhysQ  << "is invalid value of [physical quantity] in [H1D]" << endl;
 	      return;
 	    }
@@ -1231,7 +1250,7 @@ void nwlConfigParser::ReadOutput(){
 	    	    
 	    H2D.PhysQ_x  = CurStr.substr(0, found);
 
-	    if( (H2D.PhysQ_x.compare("Energy")!=0) && (H2D.PhysQ_x.compare("Time")!=0) && (H2D.PhysQ_x.compare("X")!=0) &&  (H2D.PhysQ_x.compare("Y")!=0) && (H2D.PhysQ_x.compare("Z")!=0) && (H2D.PhysQ_x.compare("ProcessID")!=0) && (H2D.PhysQ_x.compare("NucleusA")!=0) && (H2D.PhysQ_x.compare("NucleusZ")!=0) ){
+	    if( (H2D.PhysQ_x.compare("Energy")!=0) && (H2D.PhysQ_x.compare("Time")!=0) && (H2D.PhysQ_x.compare("X")!=0) &&  (H2D.PhysQ_x.compare("Y")!=0) && (H2D.PhysQ_x.compare("Z")!=0) && (H2D.PhysQ_x.compare("ProcessID")!=0) && (H2D.PhysQ_x.compare("NucleusA")!=0) && (H2D.PhysQ_x.compare("NucleusZ")!=0)  && (H2D.PhysQ_x.compare("DetectorID")!=0)  && (H2D.PhysQ_x.compare("PDG")!=0) ){
 	      oerr <<"\n\nERROR: " << H2D.PhysQ_x  << "is invalid value of [physical quantity x] in [H2D]" << endl;
 	      return;
 	    }
@@ -1289,7 +1308,7 @@ void nwlConfigParser::ReadOutput(){
 
 	    H2D.PhysQ_y  = CurStr.substr(0, found);
 
-	    if( (H2D.PhysQ_y.compare("Energy")!=0) && (H2D.PhysQ_y.compare("Time")!=0) && (H2D.PhysQ_y.compare("X")!=0) &&  (H2D.PhysQ_y.compare("Y")!=0) && (H2D.PhysQ_y.compare("Z")!=0) && (H2D.PhysQ_y.compare("ProcessID")!=0) && (H2D.PhysQ_y.compare("NucleusA")!=0) && (H2D.PhysQ_y.compare("NucleusZ")!=0) ){
+	    if( (H2D.PhysQ_y.compare("Energy")!=0) && (H2D.PhysQ_y.compare("Time")!=0) && (H2D.PhysQ_y.compare("X")!=0) &&  (H2D.PhysQ_y.compare("Y")!=0) && (H2D.PhysQ_y.compare("Z")!=0) && (H2D.PhysQ_y.compare("ProcessID")!=0) && (H2D.PhysQ_y.compare("NucleusA")!=0) && (H2D.PhysQ_y.compare("NucleusZ")!=0)  && (H2D.PhysQ_y.compare("DetectorID")!=0)  && (H2D.PhysQ_y.compare("PDG")!=0) ){
 	      oerr <<"\n\nERROR: " << H2D.PhysQ_y  << "is invalid value of [physical quantity y] in [H2D]" << endl;
 	      return;
 	    }

@@ -41,11 +41,13 @@ nwlRunAction::nwlRunAction() : G4UserRunAction()
       vector<nwlH1Record> H1Ds;
       cfg->GetH1s(H1Ds);
 
-      // Creating histograms
-      analysisManager->CreateH1("Eabs","Edep in absorber", 100, 0., 800*MeV);
-      analysisManager->CreateH1("Egap","Edep in gap", 100, 0., 100*MeV);
-      analysisManager->CreateH1("Labs","trackL in absorber", 100, 0., 1*m);
-      analysisManager->CreateH1("Lgap","trackL in gap", 100, 0., 50*cm);
+      vector<nwlH1Record>::const_iterator it;
+      for (it=H1Ds.begin(); it!=H1Ds.end(); ++it)
+	{
+	  // Creating histograms
+	  G4int id = analysisManager->CreateH1((*it).PhysQ, (*it).PhysQ, (*it).Nbins, (*it).Xmin, (*it).Xmax);
+	  H1map[id] = (*it).PhysQ;
+	}
     }
   
   if(cfg->CreateH2())
@@ -53,11 +55,16 @@ nwlRunAction::nwlRunAction() : G4UserRunAction()
       vector<nwlH2Record> H2Ds;
       cfg->GetH2s(H2Ds);
       
-      // Creating histograms
-      analysisManager->CreateH1("Eabs","Edep in absorber", 100, 0., 800*MeV);
-      analysisManager->CreateH1("Egap","Edep in gap", 100, 0., 100*MeV);
-      analysisManager->CreateH1("Labs","trackL in absorber", 100, 0., 1*m);
-      analysisManager->CreateH1("Lgap","trackL in gap", 100, 0., 50*cm);
+      vector<nwlH2Record>::const_iterator it;
+      for (it=H2Ds.begin(); it!=H2Ds.end(); ++it)
+	{
+	  // Creating histograms
+	  string hname = (*it).PhysQ_x+" "+(*it).PhysQ_y;
+	  G4int id = analysisManager->CreateH2(hname, hname, (*it).Nbins_x, (*it).Xmin, (*it).Xmax,
+					       (*it).Nbins_y, (*it).Ymin, (*it).Ymax);
+	  pair <string, string> val ((*it).PhysQ_x, (*it).PhysQ_y); 
+	  H2map[id] = val;
+	}
     }
   
   // Creating ntuple
@@ -131,19 +138,10 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
   G4UImanager* UImanager = G4UImanager::GetUIpointer();
   UImanager->ApplyCommand("/gps/particle "+particleName);
 
-  vector<string> cfgdet;
-  if( cfg->GetDetector(cfgdet) )
-    {
-      for(unsigned int i = 0; i < cfgdet.size(); i++)
-	{
-	  detectorId.push_back(cfgdet[i]); 
-	}
-    }
-
   // output file
-  vector<nwlH1Record> H1Ds; 
-  vector<nwlH2Record> H2Ds;
-  bool WriteNtuple;
+  // vector<nwlH1Record> H1Ds; 
+  // vector<nwlH2Record> H2Ds;
+  // bool WriteNtuple;
 
   auto analysisManager = G4AnalysisManager::Instance();
   analysisManager->OpenFile("run_"+std::to_string(jobID)+".txt");
@@ -156,37 +154,51 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
     }
     }
   */
-
-  // process table
-  process["Generator"] = 0;
-  int j = 1;
-  G4ParticleTable* ptable = G4ParticleTable::GetParticleTable();
-  int k =0;
-  for(k=0; k< ptable->entries(); ++k)
+  if (IsMaster()) 
     {
-      G4ParticleDefinition* particle = ptable->GetParticle(k);
-      if(! particle) continue;
-      G4ProcessManager* pmanager = particle->GetProcessManager();
-      int i;
-      for (i=0; i<pmanager->GetProcessListLength();i++){
-	j++;
-	// G4cout << "Process " << j << " " << (*(pmanager->GetProcessList()))[i]->GetProcessName() << " of " << particle->GetParticleName() << G4endl;
-	process[(*(pmanager->GetProcessList()))[i]->GetProcessName()] = j;
-      }
-    }
+      // detector list
+      vector<string> cfgdet;
+      if( cfg->GetDetector(cfgdet) )
+	{
+	  G4cout << "Detector list" << G4endl;
+	  for(unsigned int i = 0; i < cfgdet.size(); i++)
+	    {
+	      detectorId.push_back(cfgdet[i]);
+	      detectorList[cfgdet[i]] = i;
+	      G4cout << "ID " << i << " " << cfgdet[i] << G4endl;
+	    }
+	}
+      
+      // process table
+      process["Generator"] = 0;
+      int j = 1;
+      G4ParticleTable* ptable = G4ParticleTable::GetParticleTable();
+      int k =0;
+      for(k=0; k< ptable->entries(); ++k)
+	{
+	  G4ParticleDefinition* particle = ptable->GetParticle(k);
+	  if(! particle) continue;
+	  G4ProcessManager* pmanager = particle->GetProcessManager();
+	  int i;
+	  for (i=0; i<pmanager->GetProcessListLength();i++){
+	    j++;
+	    // G4cout << "Process " << j << " " << (*(pmanager->GetProcessList()))[i]->GetProcessName() << " of " << particle->GetParticleName() << G4endl;
+	    process[(*(pmanager->GetProcessList()))[i]->GetProcessName()] = j;
+	  }
+	}
   
-  G4cout << "Process list" << G4endl;
-  std::map<G4String,int>::iterator it;
-  j=0;
-  for(it=process.begin(); it!=process.end(); ++it)
-    {
-      (*it).second=j++;
+      G4cout << "Process list" << G4endl;
+      std::map<G4String,int>::iterator it;
+      j=0;
+      for(it=process.begin(); it!=process.end(); ++it)
+	{
+	  (*it).second=j++;
+	}
+      for(it=process.begin(); it!=process.end(); ++it)
+	{
+	  G4cout << (*it).first << " " << (*it).second << G4endl;
+	}
     }
-  for(it=process.begin(); it!=process.end(); ++it)
-    {
-      G4cout << (*it).first << " " << (*it).second << G4endl;
-    }
-
   G4cout << "### Run " << aRun->GetRunID() << " start." << G4endl;
 
   //inform the runManager to save random number seed
@@ -196,7 +208,17 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
   nwlEventAction::Instance()->Reset();
 }
 
-void nwlRunAction::EndOfRunAction(const G4Run* aRun)
+G4int nwlRunAction::GetProcessID(G4String name)
+{
+  return process[name];
+}
+
+G4int nwlRunAction::GetDetectorID(G4String name)
+{
+  return detectorList[name];
+}
+
+void nwlRunAction::EndOfRunAction(const G4Run*)
 {
   if (IsMaster()) 
     {

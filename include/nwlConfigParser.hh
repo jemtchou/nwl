@@ -30,12 +30,9 @@ public:
     return m_LoggingType;
   }
  
-  std::string GetGeneratorMacro()
-  {
-    return m_GenMacro;
-  }
-
-  nwlSourceRecord GetSource();
+  std::string GetGeneratorMacro();
+ 
+  //  nwlSourceRecord GetSource();
 
   bool GetMaterial(std::vector<nwlMaterialRecord>& Materials)
   {
