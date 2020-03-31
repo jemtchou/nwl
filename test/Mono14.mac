@@ -1,0 +1,15 @@
+/tracking/verbose 2
+
+# 14 MeV neutron generator, pencil beam
+
+# spatial distribution
+/gps/pos/type Point
+/gps/pos/centre 0. 0. -50. cm
+
+# angular distribution
+/gps/direction 0 0 1
+
+# energy distribution
+/gps/ene/type Mono
+/gps/energy 14 MeV
+
