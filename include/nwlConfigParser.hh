@@ -85,6 +85,7 @@ public:
 
 protected:
   std::ifstream OpenFile(); 
+  std::string ParsePair(std::string key);
 
   void ReadNumberOfEvents();
   void ReadLoggingType();

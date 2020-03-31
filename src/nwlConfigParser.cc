@@ -77,54 +77,64 @@ ifstream nwlConfigParser::OpenFile()
   return is;
 }
 
-//====================== NumberOfEvents 
-void nwlConfigParser::ReadNumberOfEvents(){
+std::string nwlConfigParser::ParsePair(std::string key)
+{
   ifstream is = OpenFile();
 
-  long number = -1;
   string CurStr;
 
+  string value="";
+  
   try{
     while(getline (is,CurStr)){
-
-      if( CurStr.compare(0, 14, "NumberOfEvents")==0 ){
-        
-	string NumberOfEvents;
-	size_t found = CurStr.find_first_of("#");
-	if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-	found = CurStr.find_first_of(" ");
+      if( CurStr.compare(0, key.size(), key)==0 )
+	{
+	  size_t found = CurStr.find_first_of("#");
+	  if(found!=string::npos) { CurStr = CurStr.substr(0, found); }
+	  found = CurStr.find_first_of(" ");
+	  
+	  if(found==string::npos)
+	    throw std::runtime_error("\n\nERROR: There is no any space in ["+key+"] string");
+	  else
+	    {	
+	      value = CurStr.substr(found+1);
+	      while(value.c_str()[0]==' ')
+		{
+		  value = value.substr(1);
+		}
+	      found = value.find_last_not_of(" ");  
+	      value = value.substr(0, found+1);
+	    }//end if(space)
+	}//end if (key)
       
-	if(found==string::npos){
-	  throw std::runtime_error("\n\nERROR: There is no any space in [NumberOfEvents] string");
-	} else{
-	
-	  NumberOfEvents = CurStr.substr(found+1);
-	  while(NumberOfEvents.c_str()[0]==' '){ NumberOfEvents = NumberOfEvents.substr(1); }
-	  found = NumberOfEvents.find_first_of(" ");
-	  if(found!=string::npos){   NumberOfEvents = NumberOfEvents.substr(0, found); }
-
-	  number = atol(NumberOfEvents.c_str());
-	  b_EventNb = true;
-	}//end if(space)   
-      }//end if(NumberOfEvents)
-    
       CurStr.clear();
     }//end while()
-
-    if (!is.eof()){
+  if (!is.eof()){
       is.close();
       throw std::runtime_error("\n\nERROR: config file is not read");
     }//end if(eof)
-
-    is.close();
   }
   catch (const std::exception& e)
     {
-      std::cerr << "Exception: " << e.what() << std::endl;
+      cerr << "Exception: " << e.what() << endl;
       abort();
     }
   
-  m_EventNb = number;
+  is.close();
+ 
+  return value;
+}
+
+//====================== NumberOfEvents 
+void nwlConfigParser::ReadNumberOfEvents()
+{
+  string NumberOfEvents;  
+  NumberOfEvents = ParsePair("NumberOfEvents");
+  if(NumberOfEvents.size() > 0)
+    {
+      m_EventNb = atol(NumberOfEvents.c_str());
+      b_EventNb = true;
+    }
 }
 
 //========================= GeneratorMacro
@@ -143,99 +153,19 @@ std::string nwlConfigParser::GetGeneratorMacro()
   return m_GenMacro;
 }
 
-
-
-void nwlConfigParser::ReadGeneratorMacro(){
-
-  ifstream is = OpenFile();
-
-  string CurStr;
-
-  while(getline (is,CurStr)){
-    
-    if( CurStr.compare(0, 14, "GeneratorMacro")==0 ){
-      
-      size_t found = CurStr.find_first_of("#");
-      if(found!=string::npos) { CurStr = CurStr.substr(0, found); }
-      found = CurStr.find_first_of(" ");
-      
-      if(found==string::npos){
-	oerr <<"\n\nERROR: There is no any space in [GeneratorMacro] string" << endl;
-	return;
-      }
-      else {	
-	m_GenMacro = CurStr.substr(found+1);
-	while(m_GenMacro.c_str()[0]==' ')
-	  {
-	    m_GenMacro = m_GenMacro.substr(1);
-	  }
-	found = m_GenMacro.find_first_of(" ");
-	if(found!=string::npos)
-	  {
-	    m_GenMacro = m_GenMacro.substr(0, found);
-	    b_GenMacro = true;
-	  }
-	
-      }//end if(space)
-    }//end if(GenMacro)
-    
-    CurStr.clear();
-  }//end while()
-
-  if (!is.eof()){    
-    oerr <<"\n\nERROR: config file is not read" << endl;
-    is.close();
-    return;
-  }//end if(eof)
-
-  is.close();
+void nwlConfigParser::ReadGeneratorMacro()
+{
+  m_GenMacro = ParsePair("GeneratorMacro");
+  if(m_GenMacro.size()>0)
+    b_GenMacro = true;
 }
 
 //========================= LoggingType
-void nwlConfigParser::ReadLoggingType(){
-
-  ifstream is = OpenFile();
-
-  string CurStr;
-
-  while(getline (is,CurStr)){
-    
-    if( CurStr.compare(0, 11, "LoggingType")==0 ){
-      
-      size_t found = CurStr.find_first_of("#");
-      if(found!=string::npos){ CurStr = CurStr.substr(0, found); }
-      found = CurStr.find_first_of(" ");
-      
-      if(found==string::npos){
-	oerr <<"\n\nERROR: There is no any space in [LoggingType] string" << endl;
-	return;
-      } else
-	{
-	  m_LoggingType = CurStr.substr(found+1);
-	  while(m_LoggingType.c_str()[0]==' ')
-	    {
-	      m_LoggingType = m_LoggingType.substr(1);
-	    }
-	  found = m_LoggingType.find_first_of(" ");
-	  if(found!=string::npos)
-	    {
-	      m_LoggingType = m_LoggingType.substr(0, found);
-	      b_LoggingType = true;
-	    }	  
-	}//end if(space)
-    }//end if(LoggingType)
-    
-    CurStr.clear();
-  }//end while()
-
-  if (!is.eof()){
-    
-    oerr <<"\n\nERROR: config file is not read" << endl;
-    is.close();
-    return;
-  }//end if(eof)
-
-  is.close();
+void nwlConfigParser::ReadLoggingType()
+{
+  m_LoggingType = ParsePair("LoggingType");
+  if(m_LoggingType.size() > 0)
+    b_LoggingType = true;
 }
 
 //===================================== 'Source

@@ -59,7 +59,7 @@ nwlRunAction::nwlRunAction() : G4UserRunAction()
       for (it=H2Ds.begin(); it!=H2Ds.end(); ++it)
 	{
 	  // Creating histograms
-	  string hname = (*it).PhysQ_x+" "+(*it).PhysQ_y;
+	  string hname = (*it).PhysQ_x+"_"+(*it).PhysQ_y;
 	  G4int id = analysisManager->CreateH2(hname, hname, (*it).Nbins_x, (*it).Xmin, (*it).Xmax,
 					       (*it).Nbins_y, (*it).Ymin, (*it).Ymax);
 	  pair <string, string> val ((*it).PhysQ_x, (*it).PhysQ_y); 
@@ -144,7 +144,7 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
   // bool WriteNtuple;
 
   auto analysisManager = G4AnalysisManager::Instance();
-  analysisManager->OpenFile("run_"+std::to_string(jobID)+".txt");
+  analysisManager->OpenFile("run_"+std::to_string(jobID)+".dat");
   /*
     if(cfg->GetOutput(H1Ds, H2Ds, WriteNtuple))
     {
@@ -220,13 +220,13 @@ G4int nwlRunAction::GetDetectorID(G4String name)
 
 void nwlRunAction::EndOfRunAction(const G4Run*)
 {
-  if (IsMaster()) 
-    {
+  // if (IsMaster()) 
+  //  {
       auto analysisManager = G4AnalysisManager::Instance();
       // save histograms & ntuple
       analysisManager->Write();
       analysisManager->CloseFile();
-    };
+      //  };
 
   fout.close();
 }

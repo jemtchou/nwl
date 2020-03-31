@@ -16,11 +16,10 @@ nwlSD::nwlSD(const G4String& name) : G4VSensitiveDetector(name)
 nwlSD::~nwlSD() 
 {}
 
-void nwlSD::Initialize(G4HCofThisEvent* hce)
+void nwlSD::Initialize(G4HCofThisEvent*)
 {}
 
-G4bool nwlSD::ProcessHits(G4Step* step, 
-			   G4TouchableHistory*)
+G4bool nwlSD::ProcessHits(G4Step* step, G4TouchableHistory*)
 {  
   G4Track* track = step->GetTrack();
 
@@ -30,7 +29,12 @@ G4bool nwlSD::ProcessHits(G4Step* step,
 
   if (info->GetDetectorID() == "")
     {
-       info->SetDetectorInfo(dname, track->GetGlobalTime(), track->GetKineticEnergy(), step->GetPreStepPoint()->GetPosition(), track->GetMomentumDirection(), track->GetWeight());
+       info->SetDetectorInfo(dname, 
+			     track->GetGlobalTime(), 
+                             track->GetKineticEnergy(), 
+                             step->GetPreStepPoint()->GetPosition(), 
+                             track->GetMomentumDirection(), 
+                             track->GetWeight());
        return true;
     }
   return false;

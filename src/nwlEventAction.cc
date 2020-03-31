@@ -66,7 +66,7 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
   nwlConfigParser* cfg = nwlConfigParser::Instance();
 
   nwlParticleInfoVector::iterator it;
- 
+  
   // one may put some selection logic here
   //     (*it).Write(ra->GetStream());
   if(cfg->CreateH1())

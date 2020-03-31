@@ -20,6 +20,7 @@ public:
   ~nwlGeoModel();
 
   G4VPhysicalVolume* Construct();
+  virtual void ConstructSDandField();
 
   void ConfigureImportanceSampling();
  
