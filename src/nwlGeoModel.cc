@@ -211,26 +211,31 @@ G4VPhysicalVolume* nwlGeoModel::Construct()
     }
   }
 
-// --- Sensitive detectors ---
+
+  return pWorld;
+}
+
+void nwlGeoModel::ConstructSDandField()
+{
+  nwlConfigParser* cfg = nwlConfigParser::Instance();
+
+  // --- Sensitive detectors ---
   G4SDManager* SDman = G4SDManager::GetSDMpointer();
   vector<string> sds;
   if( cfg->GetDetector(sds) )
   {	
     for(vector<string>::iterator jt = sds.begin(); jt != sds.end(); ++jt)
     {
-	if(logvol[(*jt)] != 0)
-	{
-	    G4VSensitiveDetector* sd = new nwlSD(*jt);
-	    logvol[(*jt)]->SetSensitiveDetector(sd);
-	    SDman->AddNewDetector(sd);
-	}
-	else
-	    G4Exception("nwlGeoModel", "ConfigFile", FatalException, ("Sensitive Volume "+(*jt)+" not defined in GeoModel.").c_str());
-
+       if(logvol[(*jt)] != 0)
+       {
+         G4VSensitiveDetector* sd = new nwlSD(*jt);
+         SetSensitiveDetector((*jt), sd, true);
+         SDman->AddNewDetector(sd);
+       }
+      else
+         G4Exception("nwlGeoModel", "ConfigFile", FatalException, ("Sensitive Volume "+(*jt)+" not defined in GeoModel.").c_str());
     }
   }
-
-  return pWorld;
 }
 
 void nwlGeoModel::ConfigureImportanceSampling()
