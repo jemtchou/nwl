@@ -1,0 +1,30 @@
+#/tracking/verbose 2
+# PuBe neutron source
+
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/centre 0. 0. -50. cm
+/gps/pos/radius 2.5 cm
+/gps/pos/halfz 4. cm
+
+# angular distribution
+/gps/ang/type iso
+
+/gps/ene/type Arb
+/gps/ene/diffspec 0
+/gps/hist/type arb
+/gps/hist/point 0.0 5.
+/gps/hist/point 1.5 6.
+/gps/hist/point 2.5 8.
+/gps/hist/point 3.5 15.
+/gps/hist/point 4.5 19.
+/gps/hist/point 5.5 13.
+/gps/hist/point 6.5 9.
+/gps/hist/point 7.5 11.
+/gps/hist/point 8.5 8.
+/gps/hist/point 9.5 4.
+/gps/hist/point 10.5 2.
+/gps/hist/point 11.5 0.
+/gps/hist/inter Lin
+
+
