@@ -30,29 +30,50 @@ Description of source: macro with Geant4 GPS commands
 (GPS commands are described [here] (http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/GettingStarted/generalParticleSource.html) )
 
 ***Description of materials***
+
 *Example*
+
 **Material**
+
 + rock
+
 ++ Density 2.73 #g/cm3
+
 ++ Ca 40.0 #%
+
 ++ C 12.0
+
 ++ H 0.03
+
 ++ O 47.97
 
+
 ***Description of geometry***
+
 *Example*
+
 **Geometry**
+
 + world Vacuum Tub 0 1001 1001 0 360 () [] #(x, y, z) - placement; [x1, y1, z1, x2, y2, z2, x3, y3, z3] - rotation matrix; () [] - at point (0, 0, 0) without rotation
+
 ++ Rock rock Tub 62.0 1000.0 1000.0 0 360 () []
+
 ++ WellWater G4_WATER Tub 0.0 62.0 1000.0 0 360 () []
+
 +++ LogTube SLW3 Tub 28.5 52.5 1000.0 0 360 () []
+
 +++ LogAir G4_AIR Tub 0 28.5 1000 0 360 () []
+
 ++++ Source G4_Pu Tub 0.0 24.0 20.0 0 360 (0, 0, -50.0) []
+
 ++++ Shield G4_Pb Tub 0.0 28.5 30.0 0 360 (0, 0, 0.0) []
+
 ++++ DetectorBGO G4_BGO Tub 0.0 28.0 20 0 360 (0, 0, 50) [] 2.0 # volume importance
 
 ***Description of sensitive detector***
+
 **Detector**
+
 + DetectorBGO
 
 ***Configuration of the output***
@@ -60,9 +81,13 @@ Output is stored in CSV format (can be changed to ROOT in nwlAnalysis.hh)
 
 **Output**
 + H1D Energy 100 0 100     # 1D histogram
+
 + H1D PDG 10000 -5000 5000 # 1D histogram
+
 + H2D X 100 -100 100 Y 100 -100 100 # 2D histogram
+
 + WriteNtuple True
+
 + StoreAllParticles True
 
 Histograms may contain the following particle properties:
