@@ -46,7 +46,7 @@ void nwlTrackingAction::PreUserTrackingAction(const G4Track* track)
   G4int parentid = track->GetParentID();
  
   nwlParticleInfo* info = new nwlParticleInfo;
-  info->SetOriginInfo(track->GetTrackID(), pdg, track->GetKineticEnergy(), track->GetGlobalTime(), track->GetPosition(), track->GetVolume(), pname, na, nz);
+  info->SetOriginInfo(track->GetTrackID(), parentid, pdg, track->GetKineticEnergy(), track->GetGlobalTime(), track->GetPosition(), track->GetVolume(), pname, na, nz);
 
   G4Track*  theTrack( const_cast< G4Track * >( track ) );
   theTrack->SetUserInformation(info);
