@@ -15,8 +15,6 @@ public:
   nwlRunAction();
   virtual ~nwlRunAction();
 
-  static nwlRunAction* Instance();
-
   virtual void BeginOfRunAction(const G4Run*);
   virtual void   EndOfRunAction(const G4Run*);
 
@@ -44,8 +42,6 @@ private:
 
   std::map<G4int, std::string> H1map;
   std::map<G4int, std::pair<std::string, std::string> > H2map;
-
-  static nwlRunAction* fgInstance;
 };
 
 #endif

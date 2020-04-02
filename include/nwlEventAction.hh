@@ -4,26 +4,25 @@
 #include "G4UserEventAction.hh"
 #include "nwlParticleInfo.hh"
 
+class nwlRunAction;
+
 class nwlEventAction : public G4UserEventAction
 {
 public:
-  nwlEventAction();
+  nwlEventAction(nwlRunAction*);
   virtual ~nwlEventAction();
-  
-  static nwlEventAction* Instance();
   
   virtual void BeginOfEventAction(const G4Event* event);
   virtual void EndOfEventAction(const G4Event* event);
 
+  nwlRunAction* GetRunAction(){return fRunAction;};
   void StoreParticleInfo(nwlParticleInfo& pinfo);
   
   void Reset();
   
 private:
-  static nwlEventAction* fgInstance;  
-  
   G4int     fPrintModulo;
-  
+  nwlRunAction* fRunAction;  
   nwlParticleInfoVector particles;
 };
 

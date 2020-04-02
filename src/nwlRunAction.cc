@@ -13,18 +13,8 @@
 
 using namespace std;
 
-
-nwlRunAction* nwlRunAction::fgInstance = 0;
-
-nwlRunAction* nwlRunAction::Instance()
-{
-  return fgInstance;
-}
-
 nwlRunAction::nwlRunAction() : G4UserRunAction()
 {
-  fgInstance = this;
-
   auto analysisManager = G4AnalysisManager::Instance();
   G4cout << "Using " << analysisManager->GetType() << G4endl;
 
@@ -204,9 +194,6 @@ void nwlRunAction::BeginOfRunAction(const G4Run* aRun)
 
   //inform the runManager to save random number seed
   G4RunManager::GetRunManager()->SetRandomNumberStore(false);
-    
-  //initialize event cumulative quantities
-  nwlEventAction::Instance()->Reset();
 }
 
 G4int nwlRunAction::GetProcessID(G4String name)

@@ -28,7 +28,8 @@ void nwlActionInitialization::Build() const
   nwlRunAction* runAction = new nwlRunAction;
   runAction->SetJobID(jobID);
   SetUserAction(runAction);
-  SetUserAction(new nwlEventAction());
-  SetUserAction(new nwlTrackingAction());
+  nwlEventAction* eventAction = new nwlEventAction(runAction);
+  SetUserAction(eventAction);
+  SetUserAction(new nwlTrackingAction(eventAction));
   SetUserAction(new nwlSteppingAction());
 }  
