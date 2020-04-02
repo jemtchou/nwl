@@ -12,24 +12,14 @@
 #include "G4Event.hh"
 #include "G4Run.hh"
 
-nwlEventAction* nwlEventAction::fgInstance = 0;
-
-nwlEventAction* nwlEventAction::Instance()
-{
-  return fgInstance;
-}      
-
-nwlEventAction::nwlEventAction()
+nwlEventAction::nwlEventAction(nwlRunAction* runAction)
   : G4UserEventAction(),
-    fPrintModulo(100)
-{ 
-  fgInstance = this;
-}
+    fPrintModulo(100),
+    fRunAction(runAction)
+{ }
 
 nwlEventAction::~nwlEventAction()
-{ 
-  fgInstance = 0;
-}
+{ }
 
 void nwlEventAction::BeginOfEventAction(const G4Event* event)
 {
@@ -49,6 +39,8 @@ void nwlEventAction::BeginOfEventAction(const G4Event* event)
   
     G4cout << "\n---> Begin of event: " << eventNb << " " << outstr << G4endl;
   } 
+ 
+  Reset();
 }
 
 void nwlEventAction::StoreParticleInfo(nwlParticleInfo& pinfo)
@@ -58,8 +50,6 @@ void nwlEventAction::StoreParticleInfo(nwlParticleInfo& pinfo)
 
 void nwlEventAction::EndOfEventAction(const G4Event* event)
 {
-  nwlRunAction* ra = nwlRunAction::Instance();
-
   // Store particle info to file and histo
   auto analysisManager = G4AnalysisManager::Instance();
 
@@ -71,7 +61,7 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
   //     (*it).Write(ra->GetStream());
   if(cfg->CreateH1())
     {
-      const std::map<G4int, std::string>& h1map = ra->GetH1map();
+      const std::map<G4int, std::string>& h1map = fRunAction->GetH1map();
 	for (it=particles.begin(); it!=particles.end(); ++it)
 	  {
 	   std::map<G4int, std::string>::const_iterator h1;
@@ -83,10 +73,10 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
 	       else if ((*h1).second == "X") { val = (*it).GetOriginPoint().x(); }
 	       else if ((*h1).second == "Y") { val = (*it).GetOriginPoint().y(); }
 	       else if ((*h1).second == "Z") { val = (*it).GetOriginPoint().z(); }
-	       else if ((*h1).second == "ProcessID") { val = ra->GetProcessID((*it).GetCreatorProcess()); }
+	       else if ((*h1).second == "ProcessID") { val = fRunAction->GetProcessID((*it).GetCreatorProcess()); }
 	       else if ((*h1).second == "NucleusA") { val = (*it).GetOriginNucleusA(); }
 	       else if ((*h1).second == "NucleusZ") { val = (*it).GetOriginNucleusZ(); }
-	       else if ((*h1).second == "DetectorID") { val = ra->GetDetectorID((*it).GetDetectorID()); }
+	       else if ((*h1).second == "DetectorID") { val = fRunAction->GetDetectorID((*it).GetDetectorID()); }
 	       else if ((*h1).second == "PDG") { val = (*it).GetPDG(); }
 	       
 	       G4double weight = (*it).GetWeight();
@@ -97,7 +87,7 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
 
   if(cfg->CreateH2())
     {
-      const std::map<G4int, std::pair<std::string, std::string> >& h2map = ra->GetH2map();
+      const std::map<G4int, std::pair<std::string, std::string> >& h2map = fRunAction->GetH2map();
       for (it=particles.begin(); it!=particles.end(); ++it)
 	{
 	   std::map<G4int, std::pair<std::string, std::string> >::const_iterator h2;
@@ -110,11 +100,11 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
 	       else if ((*h2).second.first == "Y") { valx = (*it).GetOriginPoint().y(); }
 	       else if ((*h2).second.first == "Z") { valx = (*it).GetOriginPoint().z(); }
 	       else if ((*h2).second.first == "ProcessID")
-		 { valx = ra->GetProcessID((*it).GetCreatorProcess()); }
+		 { valx = fRunAction->GetProcessID((*it).GetCreatorProcess()); }
 	       else if ((*h2).second.first == "NucleusA") { valx = (*it).GetOriginNucleusA(); }
 	       else if ((*h2).second.first == "NucleusZ") { valx = (*it).GetOriginNucleusZ(); }
 	       else if ((*h2).second.first == "DetectorID")
-		 { valx = ra->GetDetectorID((*it).GetDetectorID()); }
+		 { valx = fRunAction->GetDetectorID((*it).GetDetectorID()); }
 	       else if ((*h2).second.first == "PDG") { valx = (*it).GetPDG(); }
 
 	       if((*h2).second.second == "Energy") { valy = (*it).GetDetectorKineticEnergy(); }
@@ -123,11 +113,11 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
 	       else if ((*h2).second.second == "Y") { valy = (*it).GetOriginPoint().y(); }
 	       else if ((*h2).second.second == "Z") { valy = (*it).GetOriginPoint().z(); }
 	       else if ((*h2).second.second == "ProcessID")
-		 { valy = ra->GetProcessID((*it).GetCreatorProcess()); }
+		 { valy = fRunAction->GetProcessID((*it).GetCreatorProcess()); }
 	       else if ((*h2).second.second == "NucleusA") { valy = (*it).GetOriginNucleusA(); }
 	       else if ((*h2).second.second == "NucleusZ") { valy = (*it).GetOriginNucleusZ(); }
 	       else if ((*h2).second.second == "DetectorID")
-		 { valy = ra->GetDetectorID((*it).GetDetectorID()); }
+		 { valy = fRunAction->GetDetectorID((*it).GetDetectorID()); }
 	       else if ((*h2).second.second == "PDG") { valy = (*it).GetPDG(); }
 	       
 	       G4double weight = (*it).GetWeight();

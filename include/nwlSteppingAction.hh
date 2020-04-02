@@ -14,9 +14,6 @@ class nwlSteppingAction : public G4UserSteppingAction
     nwlSteppingAction();
     virtual ~nwlSteppingAction();
 
-    // static access method
-    static nwlSteppingAction* Instance();
-
     // method from the base class
     virtual void UserSteppingAction(const G4Step*);
 
@@ -31,12 +28,8 @@ class nwlSteppingAction : public G4UserSteppingAction
     G4double GetEnergy() const { return fEnergy; }
    
   private:
-    static nwlSteppingAction* fgInstance;  
-  
     G4LogicalVolume* fVolume;
     G4double  fEnergy;
-
-    static std::ofstream fout;
 };
 
 #endif
