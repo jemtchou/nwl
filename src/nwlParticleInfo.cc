@@ -7,6 +7,7 @@ using namespace CLHEP;
 nwlParticleInfo::nwlParticleInfo()
 {
 	trackID = 0;
+	parentID = 0;
         pdg = 0;
         originTime = 0;
         originKineticEnergy = 0;
@@ -28,7 +29,8 @@ nwlParticleInfo::~nwlParticleInfo()
 void nwlParticleInfo::Print() const
 {
   G4cout << "******" << G4endl
-         << "TrackID =    " << trackID << G4endl 
+         << "TrackID =    " << trackID << G4endl
+         << "ParentID =    " << parentID << G4endl 
 	 << "PDG          " << pdg  << G4endl
          << "OriginXYZ    " << originPoint << G4endl
 	 << "OriginTime   " << originTime << G4endl
@@ -73,9 +75,10 @@ void nwlParticleInfo::Write(std::ostream& outs)
 	<< weight << std::endl;
 }
 
-void nwlParticleInfo::SetOriginInfo(G4int TrackID, G4int Pdg, G4double Kine, G4double Time, G4ThreeVector OriginPoint, G4VPhysicalVolume* vol, G4String CreatorProcess, G4int nA, G4int nZ)
+void nwlParticleInfo::SetOriginInfo(G4int TrackID, G4int ParentID, G4int Pdg, G4double Kine, G4double Time, G4ThreeVector OriginPoint, G4VPhysicalVolume* vol, G4String CreatorProcess, G4int nA, G4int nZ)
 {
 	trackID = TrackID;
+	parentID = ParentID;
 	pdg = Pdg;
 	originKineticEnergy = Kine;
 	originTime = Time;

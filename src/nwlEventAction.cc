@@ -149,6 +149,7 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
 	  G4int counter = 0;
 	  analysisManager->FillNtupleIColumn(counter++, event->GetEventID());
 	  analysisManager->FillNtupleIColumn(counter++, (*it).GetTrackID());
+          analysisManager->FillNtupleIColumn(counter++, (*it).GetParentID());
 	  analysisManager->FillNtupleIColumn(counter++, (*it).GetPDG());
 	  analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().x());
 	  analysisManager->FillNtupleDColumn(counter++, (*it).GetOriginPoint().y());

@@ -18,18 +18,19 @@ class  nwlParticleInfo : public G4VUserTrackInformation
 
         void Print() const;
 
-	void SetOriginInfo(G4int TrackID, G4int Pdg, G4double Kine, G4double Time, G4ThreeVector OriginPoint, G4VPhysicalVolume* vol, G4String CreatorProcess, G4int nA, G4int nZ);
+	void SetOriginInfo(G4int TrackID, G4int ParentID, G4int Pdg, G4double Kine, G4double Time, G4ThreeVector OriginPoint, G4VPhysicalVolume* vol, G4String CreatorProcess, G4int nA, G4int nZ);
 
 	void SetDetectorInfo(G4String DetId, G4double Time, G4double Kine, G4ThreeVector EntrancePoint, G4ThreeVector EntranceDir, G4double W);
 
 	void SetFinalInfo(G4bool StopInDet, G4String detId, G4String ctorDetProcess);
 
 	G4int GetTrackID() {return trackID;}
+	G4int GetParentID() {return parentID;}
 	G4int GetPDG() {return pdg;}
 	G4ThreeVector& GetOriginPoint() {return originPoint;}
 	G4double GetOriginTime() {return originTime;}
 	G4double GetOriginKineticEnergy() {return originKineticEnergy;}
-	G4String GetOriginVolumeName() {return originVolume->GetName();}
+	G4String GetOriginVolumeName() {G4String name = originVolume->GetName(); return name;}
 	G4String GetCreatorProcess() {return creatorProcess;}
 	G4int GetOriginNucleusA() {return originNucleusA;}
 	G4int GetOriginNucleusZ() {return originNucleusZ;}
@@ -47,6 +48,7 @@ class  nwlParticleInfo : public G4VUserTrackInformation
 
     private:
 	G4int trackID;
+	G4int parentID;
 	G4int pdg;
 	G4ThreeVector originPoint;
 	G4double originTime;

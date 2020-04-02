@@ -73,6 +73,7 @@ nwlRunAction::nwlRunAction() : G4UserRunAction()
       analysisManager->CreateNtuple("NWL", "Well Logging Simu");
       analysisManager->CreateNtupleIColumn("EventID");
       analysisManager->CreateNtupleIColumn("TrackID");
+      analysisManager->CreateNtupleIColumn("ParentID");
       analysisManager->CreateNtupleIColumn("PDG");
       analysisManager->CreateNtupleDColumn("OriginX");
       analysisManager->CreateNtupleDColumn("OriginY");
