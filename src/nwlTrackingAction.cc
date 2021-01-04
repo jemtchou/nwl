@@ -9,6 +9,7 @@
 #include "G4HadronicProcess.hh"
 #include "G4Nucleus.hh"
 #include "G4VProcess.hh"
+#include "G4VEmProcess.hh"
 #include "G4ProcessManager.hh"
 #include "G4ProcessVector.hh"
 #include "G4ParticleTable.hh"
@@ -38,6 +39,21 @@ void nwlTrackingAction::PreUserTrackingAction(const G4Track* track)
 		na = nucleus->GetA_asInt();
   		nz = nucleus->GetZ_asInt();
 	}
+        else if (proc->GetProcessType()==fElectromagnetic)
+        {
+                G4int subtype = ((G4VEmProcess*)proc)->GetProcessSubType();
+  //              G4cout << "-->" << proc->GetProcessName() << " " << subtype << G4endl;
+
+                if(subtype != 2 && subtype !=3 && subtype !=10) // no eBrem, eIoni, msc
+                {
+                  const G4Element* elem = ((G4VEmProcess*)proc)->GetCurrentElement();
+                  if(elem) {
+                  nz = elem->GetZasInt();
+                  na = elem->GetN(); }
+  //		  G4cout << "EM " << nz << " " << na << G4endl; 
+                }
+        }
+
   }
   else
         pname = "Generator";

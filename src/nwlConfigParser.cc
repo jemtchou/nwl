@@ -1126,7 +1126,8 @@ void nwlConfigParser::ReadOutput(){
 	   
 	    H1D.PhysQ  = CurStr.substr(0, found);
 
-	    if( (H1D.PhysQ.compare("Energy")!=0) && (H1D.PhysQ.compare("Time")!=0) && (H1D.PhysQ.compare("X")!=0) &&  (H1D.PhysQ.compare("Y")!=0) && (H1D.PhysQ.compare("Z")!=0) && (H1D.PhysQ.compare("ProcessID")!=0) && (H1D.PhysQ.compare("NucleusA")!=0) && (H1D.PhysQ.compare("NucleusZ")!=0)  && (H1D.PhysQ.compare("DetectorID")!=0)  && (H1D.PhysQ.compare("PDG")!=0) ){
+	    if( (H1D.PhysQ.compare("Energy")!=0) && (H1D.PhysQ.compare("Time")!=0) && (H1D.PhysQ.compare("X")!=0) &&  (H1D.PhysQ.compare("Y")!=0) && (H1D.PhysQ.compare("Z")!=0) && (H1D.PhysQ.compare("ProcessID")!=0) && (H1D.PhysQ.compare("NucleusA")!=0) && (H1D.PhysQ.compare("NucleusZ")!=0)  && (H1D.PhysQ.compare("DetectorID")!=0)  && (H1D.PhysQ.compare("PDG")!=0))
+            {
 	      oerr <<"\n\nERROR: " << H1D.PhysQ  << "is invalid value of [physical quantity] in [H1D]" << endl;
 	      return;
 	    }
@@ -1180,7 +1181,7 @@ void nwlConfigParser::ReadOutput(){
 	    	    
 	    H2D.PhysQ_x  = CurStr.substr(0, found);
 
-	    if( (H2D.PhysQ_x.compare("Energy")!=0) && (H2D.PhysQ_x.compare("Time")!=0) && (H2D.PhysQ_x.compare("X")!=0) &&  (H2D.PhysQ_x.compare("Y")!=0) && (H2D.PhysQ_x.compare("Z")!=0) && (H2D.PhysQ_x.compare("ProcessID")!=0) && (H2D.PhysQ_x.compare("NucleusA")!=0) && (H2D.PhysQ_x.compare("NucleusZ")!=0)  && (H2D.PhysQ_x.compare("DetectorID")!=0)  && (H2D.PhysQ_x.compare("PDG")!=0) ){
+	    if( (H2D.PhysQ_x.compare("Energy")!=0) && (H2D.PhysQ_x.compare("Time")!=0) && (H2D.PhysQ_x.compare("X")!=0) &&  (H2D.PhysQ_x.compare("Y")!=0) && (H2D.PhysQ_x.compare("Z")!=0) && (H2D.PhysQ_x.compare("ProcessID")!=0) && (H2D.PhysQ_x.compare("NucleusA")!=0) && (H2D.PhysQ_x.compare("NucleusZ")!=0)  && (H2D.PhysQ_x.compare("DetectorID")!=0)  && (H2D.PhysQ_x.compare("PDG")!=0) && (H2D.PhysQ_x.compare("DEDX")!=0)){
 	      oerr <<"\n\nERROR: " << H2D.PhysQ_x  << "is invalid value of [physical quantity x] in [H2D]" << endl;
 	      return;
 	    }
@@ -1243,6 +1244,11 @@ void nwlConfigParser::ReadOutput(){
 	      return;
 	    }
 	    
+            if( (H2D.PhysQ_x.compare("DEDX")!=0) && (H2D.PhysQ_y.compare("DetectorID")!=0) )
+            {
+              oerr << "\n\nERROR: Only DEDX vs. DetectorID is available" << endl;
+	      return;
+            }
 
 	    CurStr = CurStr.substr(found+1);
 	    while(CurStr.c_str()[0]==' '){ CurStr = CurStr.substr(1); }
