@@ -36,6 +36,10 @@ nwlRunAction::nwlRunAction() : G4UserRunAction()
 	{
 	  // Creating histograms
 	  G4int id = analysisManager->CreateH1((*it).PhysQ, (*it).PhysQ, (*it).Nbins, (*it).Xmin, (*it).Xmax);
+//	  std::vector<G4double> edges;
+//	  int i;
+//          for(i=0;i<(*it).Nbins;i++) edges.push_back((*it).Xmin+i*((*it).Xmax-(*it).Xmin)/(*it).Nbins);
+//          G4int id = analysisManager->CreateH1((*it).PhysQ, (*it).PhysQ, edges);
 	  H1map[id] = (*it).PhysQ;
 	}
     }

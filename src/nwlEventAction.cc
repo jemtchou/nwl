@@ -120,6 +120,12 @@ void nwlEventAction::EndOfEventAction(const G4Event* event)
 		 { valy = fRunAction->GetDetectorID((*it).GetDetectorID()); }
 	       else if ((*h2).second.second == "PDG") { valy = (*it).GetPDG(); }
 	       
+               if((*h2).second.first == "DEDX" && (*h2).second.second == "DetectorID")
+		 {  
+		    valx = 0;
+		    valy = fRunAction->GetDetectorID((*it).GetDetectorID()); 
+		 }
+
 	       G4double weight = (*it).GetWeight();
 	       analysisManager->FillH2((*h2).first, valx, valy, weight);
 	     }
